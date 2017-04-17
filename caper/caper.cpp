@@ -18,6 +18,7 @@ using std::exit;
 #include "caper_generate_cpp.hpp"
 #include "caper_generate_js.hpp"
 #include "caper_generate_csharp.hpp"
+#include "caper_generate_csharp6.hpp"
 #include "caper_generate_d.hpp"
 #include "caper_generate_java.hpp"
 #include "caper_generate_boo.hpp"
@@ -61,6 +62,10 @@ void get_commandline_options(
                 arg == "-CSharp" || arg == "-csharp#" ||
                 arg == "-c#") {
                 cmdopt.language = "C#";
+                continue;
+            }
+            if (arg == "-cs6" || arg == "-CS6") {
+                cmdopt.language = "C#6";
                 continue;
             }
             if (arg == "-d" || arg == "-D") {
@@ -127,7 +132,7 @@ void get_commandline_options(
     }
 
     if (state < 2) {
-        std::cerr << "caper: usage: caper [-c++ | -js | -cs | -d | -java | -boo | -ruby | -php | -haxe] input_filename output_filename" << std::endl;
+        std::cerr << "caper: usage: caper [-c++ | -js | -cs | -cs6 | -d | -java | -boo | -ruby | -php | -haxe] input_filename output_filename" << std::endl;
         exit(1);
     }
 
@@ -151,6 +156,7 @@ int main(int argc, const char** argv) {
     generators["C++"]           = generate_cpp;
     generators["JavaScript"]    = generate_javascript;
     generators["C#"]            = generate_csharp;
+    generators["C#6"]           = generate_csharp6;
     generators["D"]             = generate_d;
     generators["Java"]          = generate_java;
     generators["Boo"]           = generate_boo;

@@ -182,6 +182,7 @@
     <ClCompile Include="..\caper_generate_boo.cpp" />
     <ClCompile Include="..\caper_generate_cpp.cpp" />
     <ClCompile Include="..\caper_generate_csharp.cpp" />
+    <ClCompile Include="..\caper_generate_csharp6.cpp" />
     <ClCompile Include="..\caper_generate_d.cpp" />
     <ClCompile Include="..\caper_generate_haxe.cpp" />
     <ClCompile Include="..\caper_generate_java.cpp" />
@@ -206,6 +207,7 @@
     <ClInclude Include="..\caper_generate_boo.hpp" />
     <ClInclude Include="..\caper_generate_cpp.hpp" />
     <ClInclude Include="..\caper_generate_csharp.hpp" />
+    <ClInclude Include="..\caper_generate_csharp6.hpp" />
     <ClInclude Include="..\caper_generate_d.hpp" />
     <ClInclude Include="..\caper_generate_haxe.hpp" />
     <ClInclude Include="..\caper_generate_java.hpp" />
