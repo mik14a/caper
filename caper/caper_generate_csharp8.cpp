@@ -307,7 +307,7 @@ $${methods}
         os, R"(
     class Parser<${token_parameter}TValue>
     {
-        enum Nonterminal {
+        enum NonTerminal {
 )",
         {"token_parameter", options.external_token ? "TToken, " : ""}
     );
@@ -315,57 +315,60 @@ $${methods}
     for (const auto& nonterminal_type: nonterminal_types) {
         stencil(
             os, R"(
-        Nonterminal_${nonterminal_name},
+            NonTerminal_${nonterminal_name},
 )",
             {"nonterminal_name", nonterminal_type.first}
-            );
+        );
     }
 
     stencil(
         os, R"(
-    };
-
-public:
-    Parser(_SemanticAction& sa) : sa_(sa) { reset(); }
-
-    void reset() {
-        error_ = false;
-        accepted_ = false;
-        clear_stack();
-        rollback_tmp_stack();
-        if (push_stack(${first_state}, value_type())) {
-            commit_tmp_stack();
-        } else {
-            sa_.stack_overflow();
-            error_ = true;
         }
-    }
 
-    bool post(token_type token, const value_type& value) {
-        rollback_tmp_stack();
-        error_ = false;
-        while ((this->*(stack_top()->entry->state))(token, value))
-            ; // may throw
-        if (!error_) {
-            commit_tmp_stack();
-        } else {
-            recover(token, value);
+        public Parser(ISemanticAction sa) {
+            _action = sa;
+            Reset();
         }
-        return accepted_ || error_;
-    }
 
-    bool accept(value_type& v) {
-        assert(accepted_);
-        if (error_) { return false; }
-        v = accepted_value_;
-        return true;
-    }
+        public void Reset() {
+            _error = false;
+            _accepted = false;
+            ClearStack();
+            RollbackTmpStack();
+            if (PushStack(0, default)) {
+                CommitTmpStack();
+            } else {
+                _action.StackOverflow();
+                _error = true;
+            }
+        }
 
-    bool error() { return error_; }
+        public bool Post(Token token, TValue value) {
+            RollbackTmpStack();
+            _error = false;
+            while (StackTop().Entry.State(token, value))
+                ; // may throw
+            if (!_error) {
+                CommitTmpStack();
+            } else {
+                Recover(token, value);
+            }
+            return _accepted || _error;
+        }
+
+        public bool Accept(out TValue value) {
+            Debug.Assert(_accepted);
+            value = default;
+            if (_error) { return false; }
+            value = _acceptedValue;
+            return true;
+        }
+
+        public bool Error() { return _error; }
 
 )",
-        {"first_state", table.first_state()}
-        );
+        { "first_state", table.first_state() }
+    );
 
     // implementation
     stencil(
