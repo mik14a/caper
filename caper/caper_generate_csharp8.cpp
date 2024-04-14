@@ -177,6 +177,83 @@ $${tokens}
         );
     }
 
+    // semantic action interface
+    std::set<semantic_action_entry> ss;
+    for (auto it = actions.begin(); it != actions.end(); ++it) {
+        const tgt::parsing_table::rule_type& rule = it->first;
+        const SemanticAction& sa = it->second;
+        semantic_action_entry sae;
+        sae.name = sa.name;
+        // 1st argument = out parameter
+        sae.args.push_back((*nonterminal_types.find(rule.left().name())).second.name);
+        for (size_t l = 0; l < sa.args.size(); l++) {
+            sae.args.push_back(sa.args[l].type.name);
+        }
+        ss.insert(sae);
+    }
+
+    std::unordered_set<std::string> types;
+    for (const auto& x : terminal_types) {
+        if (x.second.name != "") {
+            types.insert(x.second.name);
+        }
+    }
+    for (const auto& x : nonterminal_types) {
+        if (x.second.name != "") {
+            types.insert(x.second.name);
+        }
+    }
+
+    stencil(os, R"(
+    interface ISemanticAction
+    {
+        void SyntaxError();
+        void StackOverflow();
+$${casts}
+$${methods}
+    }
+
+)",
+        { "casts", [&](std::ostream& os) {
+            for (auto i = types.begin(); i != types.end(); ++i) {
+                stencil(os, R"(
+        ${cast}
+)",
+                    { "cast", [&](std::ostream& os) {
+                        os << "void UpCast(out object x, " << (*i) << " y);";
+                    }}
+                );
+            }
+            for (auto i = types.begin(); i != types.end(); ++i) {
+                stencil(os, R"(
+        ${cast}
+)",
+                    { "cast", [&](std::ostream& os) {
+                        os << "void DownCast(out " << (*i) << " x, object y);";
+                    } }
+                );
+            }
+        } },
+        { "methods", [&](std::ostream& os) {
+            for (auto it = ss.begin(); it != ss.end(); ++it) {
+                std::stringstream st;
+                st << (*it).args[0] << " " << (*it).name << "(";
+                bool first = true;
+                for (size_t l = 1; l < (*it).args.size(); l++) {
+                    if (first) { first = false; } else { st << ", "; }
+                    st << ((*it).args[l]) << " " << "arg" << (l - 1);
+                }
+                st << ");";
+                stencil(
+                    os, R"(
+        ${method}
+)",
+                    { "method", st.str() }
+                );
+            }
+        } }
+    );
+
     // stack class header
     stencil(
         os, R"(
@@ -257,50 +334,6 @@ $${tokens}
     }
 
 )");
-
-    // semantic action interface
-    std::set<semantic_action_entry> ss;
-    for (auto it = actions.begin(); it != actions.end(); ++it) {
-        const tgt::parsing_table::rule_type& rule = it->first;
-        const SemanticAction& sa = it->second;
-        semantic_action_entry sae;
-        sae.name = sa.name;
-        // 1st argument = out parameter
-        sae.args.push_back((*nonterminal_types.find(rule.left().name())).second.name);
-        for (size_t l = 0; l < sa.args.size(); l++) {
-            sae.args.push_back(sa.args[l].type.name);
-        }
-        ss.insert(sae);
-    }
-
-    stencil(os, R"(
-    interface ISemanticAction
-    {
-        void SyntaxError();
-        void StackOverflow();
-$${methods}
-    }
-
-)",
-        { "methods", [&](std::ostream& os) {
-            for (auto it = ss.begin(); it != ss.end(); ++it) {
-                std::stringstream st;
-                st << "void " << (*it).name << "(out ";
-                bool first = true;
-                for (size_t l = 0; l < (*it).args.size(); l++) {
-                    if (first) { first = false; } else { st << ", "; }
-                    st << ((*it).args[l]) << " " << "arg" << l;
-                }
-                st << ");";
-                stencil(
-                    os, R"(
-        ${method}
-)",
-                    { "method", st.str() }
-                );
-            }
-        }}
-    );
 
     // parser class header
     stencil(
