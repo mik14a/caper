@@ -1038,7 +1038,7 @@ $${debmes:state}
         // gotof header
         stencil(
             os, R"(
-    int gotof_${state_no}(Nonterminal nonterminal) {
+        int Gotof${state_no}(NonTerminal nonTerminal) {
 )",
             {"state_no", state.no}
             );
@@ -1047,14 +1047,14 @@ $${debmes:state}
         std::stringstream ss;
         stencil(
             ss, R"(
-        switch(nonterminal) {
+            switch(nonTerminal) {
 )"
             );
         bool output_switch = false;
         for (const auto& pair: state.goto_table) {
             stencil(
                 ss, R"(
-        case Nonterminal_${nonterminal}: return ${state_index};
+            case NonTerminal.NonTerminal_${nonterminal}: return ${state_index};
 )",
                 {"nonterminal", pair.first.name()},
                 {"state_index", pair.second}
@@ -1065,7 +1065,7 @@ $${debmes:state}
         // gotof footer
         stencil(
             ss, R"(
-        default: assert(0); return false;
+            default: Debug.Assert(false); return 0;
         }
 )"
             );
@@ -1074,8 +1074,8 @@ $${debmes:state}
         } else {
             stencil(
                 os, R"(
-        assert(0);
-        return true;
+            Debug.Assert(false);
+            return 0;
 )"
                 );
         }
