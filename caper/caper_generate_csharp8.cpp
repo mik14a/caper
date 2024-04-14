@@ -781,19 +781,19 @@ $${debmes:repost_done}
             // header
             stencil(
                 os, R"(
-    bool call_${stub_index}_${sa_name}(Nonterminal nonterminal, int base${args}) {
+        bool Call${stub_index}${sa_name}(NonTerminal nonTerminal, int @base${args}) {
 )",
                 {"stub_index", stub_index},
                 {"sa_name", normalize_internal_sa_name(sa.name)},
                 {"args", [&](std::ostream& os) {
                         for (size_t l = 0 ; l < sa.args.size() ; l++) {
-                            os << ", int arg_index" << l;
+                            os << ", int arg" << l << "Index";
                         }
                     }}
                 );
 
             // check sequence conciousness
-            std::string get_arg = "get_arg";
+            std::string get_arg = "GetArg";
             for (const auto& arg: sa.args) {
                 if (arg.type.extension != Extension::None) {
                     get_arg = "seq_get_arg";
@@ -807,7 +807,7 @@ $${debmes:repost_done}
                 if (arg.type.extension == Extension::None) {
                     stencil(
                         os, R"(
-        ${arg_type} arg${index}; sa_.downcast(arg${index}, ${get_arg}(base, arg_index${index}));
+            _action.DownCast(out var arg${index}, ${get_arg}(@base, arg${index}Index));
 )",
                         {"arg_type", make_type_name(arg.type, options.smart_pointer_tag)},
                         {"get_arg", get_arg},
@@ -826,11 +826,11 @@ $${debmes:repost_done}
             // semantic action / automatic value conversion
             stencil(
                 os, R"(
-        ${nonterminal_type} r = sa_.${semantic_action_name}(${args});
-        value_type v; sa_.upcast(v, r);
-        pop_stack(base);
-        int dest_index = (this->*(stack_top()->entry->gotof))(nonterminal);
-        return push_stack(dest_index, v);
+            var r = _action.${semantic_action_name}(${args});
+            _action.UpCast(out var v, r);
+            PopStack(@base);
+            var destIndex = StackTop().Entry.Gotof(nonTerminal);
+            return PushStack(destIndex, (TValue)v);
     }
 
 )",
