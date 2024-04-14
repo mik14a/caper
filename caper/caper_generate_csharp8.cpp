@@ -144,42 +144,23 @@ namespace ${namespace_name}
         // token enumeration
         stencil(
             os, R"(
-enum Token {
+    enum Token {
 $${tokens}
-};
-
-inline const char* token_label(Token t) {
-    static const char* labels[] = {
-$${labels}
-    };
-    return labels[t];
-}
+    }
 
 )",
-            {"tokens", [&](std::ostream& os){
-                    for(const auto& token: tokens) {
-                        stencil(
-                            os, R"(
-    ${prefix}${token},
+            { "tokens", [&](std::ostream& os) {
+                for(const auto& token: tokens) {
+                    stencil(
+                        os, R"(
+        ${prefix}${token},
 )",
-                            {"prefix", options.token_prefix},
-                            {"token", token}
-                            );
-                    }
-                }},
-            {"labels", [&](std::ostream& os){
-                    for(const auto& token: tokens) {
-                        stencil(
-                            os, R"(
-        "${prefix}${token}",
-)",
-                            {"prefix", options.token_prefix},
-                            {"token", token}
-                            );
-                    }
-                }}
-            );
-
+                        {"prefix", options.token_prefix},
+                        {"token", token}
+                    );
+                }
+            }}
+        );
     }
 
     // stack class header
