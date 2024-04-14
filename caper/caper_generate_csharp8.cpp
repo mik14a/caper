@@ -326,6 +326,9 @@ $${methods}
         }
 
         public Parser(ISemanticAction sa, uint stackSize) {
+            _entries = new List<TableEntry> {
+$${entries}
+            };
             _stack = new Stack<StackFrame>(stackSize);
             _action = sa;
             Reset();
@@ -368,7 +371,21 @@ $${methods}
         public bool Error() { return _error; }
 
 )",
-        { "first_state", table.first_state() }
+        { "first_state", table.first_state() },
+        { "entries", [&](std::ostream& os) {
+                int i = 0;
+                for (const auto& state : table.states()) {
+                    stencil(
+                        os, R"(
+                new TableEntry(State${i}, Gotof${i}, ${handle_error}),
+)",
+                        {"i", i},
+                        {"handle_error", state.handle_error}
+                    );
+                    ++i;
+                }
+            }
+        }
     );
 
     // implementation
@@ -413,10 +430,11 @@ $${methods}
     // stack operation
     stencil(
         os, R"(
+        readonly List<TableEntry> _entries;
         readonly Stack<StackFrame> _stack;
 
         bool PushStack(int stateIndex, TValue value, int sequenceLength = 0) {
-            bool f = _stack.Push(new StackFrame(Entry(stateIndex), value, sequenceLength));
+            bool f = _stack.Push(new StackFrame(_entries[stateIndex], value, sequenceLength));
             Debug.Assert(!_error);
             if (!f) {
                 _error = true;
@@ -816,7 +834,7 @@ $${debmes:repost_done}
                 } else {
                     stencil(
                         os, R"(
-        ${arg_decl};
+            ${arg_decl};
 )",
                         {"arg_decl", make_arg_decl(arg.type, l, options.smart_pointer_tag)}
                         );
@@ -831,7 +849,7 @@ $${debmes:repost_done}
             PopStack(@base);
             var destIndex = StackTop().Entry.Gotof(nonTerminal);
             return PushStack(destIndex, (TValue)v);
-    }
+        }
 
 )",
                 {"nonterminal_type", make_type_name(rule_type, options.smart_pointer_tag)},
@@ -855,7 +873,7 @@ $${debmes:repost_done}
             os, R"(
         bool State${state_no}(Token token, TValue value) {
 $${debmes:state}
-        switch(token) {
+            switch(token) {
 )",
             {"state_no", state.no},
             {"debmes:state", [&](std::ostream& os){
@@ -897,10 +915,10 @@ $${debmes:state}
                 case zw::gr::action_shift:
                     stencil(
                         os, R"(
-        case ${case_tag}:
+            case ${case_tag}:
                 // Shift
                 PushStack(/*State*/ ${dest_index}, value);
-            return false;
+                return false;
 )",
                         {"case_tag", (options.external_token ? "TToken." : "Token.") + case_tag},
                         {"dest_index", action.dest_index}
@@ -933,7 +951,7 @@ $${debmes:state}
                     } else {
                         stencil(
                             os, R"(
-        case ${case_tag}:
+            case ${case_tag}:
 )",
                             {"case_tag", (options.external_token ? "TToken." : "Token.") + case_tag}
                             );
@@ -958,11 +976,11 @@ $${debmes:state}
                 case zw::gr::action_accept:
                     stencil(
                         os, R"(
-        case ${case_tag}:
+            case ${case_tag}:
                 // Accept
                 _accepted = true;
                 _acceptedValue = GetArg(1, 0);
-            return false;
+                return false;
 )",
                         {"case_tag", (options.external_token ? "TToken." : "Token.") + case_tag }
                         );
@@ -970,10 +988,10 @@ $${debmes:state}
                 case zw::gr::action_error:
                     stencil(
                         os, R"(
-        case ${case_tag}:
+            case ${case_tag}:
                 _action.SyntaxError();
                 _error = true;
-            return false;
+                return false;
 )",
                         {"case_tag", case_tag}
                         );
@@ -997,7 +1015,7 @@ $${debmes:state}
                 // fall through, be aware when port to other language
                 stencil(
                     os, R"(
-        case ${case}:
+            case ${case}:
 )",
                     {"case", (options.external_token ? "TToken." : "Token.") + cases[j]}
                     );
@@ -1025,12 +1043,12 @@ $${debmes:state}
         // dispatcher footer / state footer
         stencil(
             os, R"(
-        default:
+            default:
                 _action.SyntaxError();
                 _error = true;
-            return false;
+                return false;
+            }
         }
-    }
 
 )"
             );
@@ -1066,7 +1084,7 @@ $${debmes:state}
         stencil(
             ss, R"(
             default: Debug.Assert(false); return 0;
-        }
+            }
 )"
             );
         if (output_switch) {
@@ -1080,40 +1098,11 @@ $${debmes:state}
                 );
         }
         stencil(os, R"(
-    }
+        }
 
 )"
             );
-
-
     }
-
-    // table
-    stencil(
-        os, R"(
-    const table_entry* entry(int n) const {
-        static const table_entry entries[] = {
-$${entries}
-        };
-        return &entries[n];
-    }
-
-)",
-        {"entries", [&](std::ostream& os) {
-                int i = 0;
-                for (const auto& state: table.states()) {
-                    stencil(
-                        os, R"(
-            { &Parser::state_${i}, &Parser::gotof_${i}, ${handle_error} },
-)",
-
-                        {"i", i},
-                        {"handle_error", state.handle_error}
-                        );
-                    ++i;
-                }
-            }}
-        );
 
     // parser class footer
     // namespace footer
@@ -1121,10 +1110,8 @@ $${entries}
     stencil(
         os,
         R"(
-};
-
+    }
 }
-
 )"
         );
 }
