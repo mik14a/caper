@@ -18,7 +18,7 @@ using std::exit;
 #include "caper_generate_cpp.hpp"
 #include "caper_generate_js.hpp"
 #include "caper_generate_csharp.hpp"
-#include "caper_generate_csharp6.hpp"
+#include "caper_generate_csharp8.hpp"
 #include "caper_generate_d.hpp"
 #include "caper_generate_java.hpp"
 #include "caper_generate_boo.hpp"
@@ -64,8 +64,8 @@ void get_commandline_options(
                 cmdopt.language = "C#";
                 continue;
             }
-            if (arg == "-cs6" || arg == "-CS6") {
-                cmdopt.language = "C#6";
+            if (arg == "-cs8" || arg == "-CS8") {
+                cmdopt.language = "C#8";
                 continue;
             }
             if (arg == "-d" || arg == "-D") {
@@ -156,7 +156,7 @@ int main(int argc, const char** argv) {
     generators["C++"]           = generate_cpp;
     generators["JavaScript"]    = generate_javascript;
     generators["C#"]            = generate_csharp;
-    generators["C#6"]           = generate_csharp6;
+    generators["C#8"]           = generate_csharp8;
     generators["D"]             = generate_d;
     generators["Java"]          = generate_java;
     generators["Boo"]           = generate_boo;

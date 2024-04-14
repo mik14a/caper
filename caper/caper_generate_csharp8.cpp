@@ -100,7 +100,7 @@ std::string normalize_sa_call(const std::string& s) {
 
 } // unnamed namespace
 
-void generate_csharp6(
+void generate_csharp8(
     const std::string&                  src_filename,
     std::ostream&                       os,
     const GenerateOptions&              options,

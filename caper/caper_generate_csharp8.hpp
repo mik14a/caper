@@ -1,9 +1,9 @@
-#ifndef CAPER_GENERATE_CSHARP6_HPP
-#define CAPER_GENERATE_CSHARP6_HPP
+#ifndef CAPER_GENERATE_CSHARP8_HPP
+#define CAPER_GENERATE_CSHARP8_HPP
 
 #include "caper_ast.hpp"
 
-void generate_csharp6(
+void generate_csharp8(
     const std::string&                  src_filename,
     std::ostream&                       os,
     const GenerateOptions&              options,
@@ -13,4 +13,4 @@ void generate_csharp6(
     const action_map_type&              actions,
     const tgt::parsing_table&           table);
 
-#endif // CAPER_GENERATE_CSHARP6_HPP
+#endif // CAPER_GENERATE_CSHARP8_HPP
