@@ -935,7 +935,7 @@ $${debmes:state}
                             os, R"(
         case ${case_tag}:
 )",
-                            {"case_tag", case_tag}
+                            {"case_tag", (options.external_token ? "TToken." : "Token.") + case_tag}
                             );
                         std::string funcname = "CallNothing";
                         if (k) {
@@ -946,7 +946,7 @@ $${debmes:state}
                         stencil(
                             os, R"(
                 // Reduce
-                return ${funcname}(NonTerminal_${nonterminal}, /*Pop*/ ${base});
+                return ${funcname}(NonTerminal.NonTerminal_${nonterminal}, /*Pop*/ ${base});
 )",
                             {"funcname", funcname},
                             {"nonterminal", rule.left().name()},
@@ -999,7 +999,7 @@ $${debmes:state}
                     os, R"(
         case ${case}:
 )",
-                    {"case", cases[j]}
+                    {"case", (options.external_token ? "TToken." : "Token.") + cases[j]}
                     );
             }
 
@@ -1008,7 +1008,7 @@ $${debmes:state}
             stencil(
                 os, R"(
                 // Reduce
-                return call_${index}_${sa_name}(NonTerminal_${nonterminal}, /*Pop*/ ${base}${args});
+                return Call${index}${sa_name}(NonTerminal.NonTerminal_${nonterminal}, /*Pop*/ ${base}${args});
 )",
                 {"index", index},
                 {"sa_name", normalize_internal_sa_name(signature[0])},
