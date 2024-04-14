@@ -853,7 +853,7 @@ $${debmes:repost_done}
         // state header
         stencil(
             os, R"(
-    bool state_${state_no}(token_type token, const value_type& value) {
+        bool State${state_no}(Token token, TValue value) {
 $${debmes:state}
         switch(token) {
 )",
@@ -862,7 +862,7 @@ $${debmes:state}
                     if (options.debug_parser) {
                         stencil(
                             os, R"(
-        std::cerr << "state_${state_no} << " << token_label(token) << "\n";
+        std::cerr << "State${state_no} << " << token_label(token) << "\n";
 )",
                             {"state_no", state.no}
                             );
@@ -898,11 +898,11 @@ $${debmes:state}
                     stencil(
                         os, R"(
         case ${case_tag}:
-            // shift
-            push_stack(/*state*/ ${dest_index}, value);
+                // Shift
+                PushStack(/*State*/ ${dest_index}, value);
             return false;
 )",
-                        {"case_tag", case_tag},
+                        {"case_tag", (options.external_token ? "TToken." : "Token.") + case_tag},
                         {"dest_index", action.dest_index}
                         );
                     break;
@@ -937,7 +937,7 @@ $${debmes:state}
 )",
                             {"case_tag", case_tag}
                             );
-                        std::string funcname = "call_nothing";
+                        std::string funcname = "CallNothing";
                         if (k) {
                             const auto& sa = *k;
                             assert(sa.special);
@@ -945,8 +945,8 @@ $${debmes:state}
                         }
                         stencil(
                             os, R"(
-            // reduce
-            return ${funcname}(Nonterminal_${nonterminal}, /*pop*/ ${base});
+                // Reduce
+                return ${funcname}(NonTerminal_${nonterminal}, /*Pop*/ ${base});
 )",
                             {"funcname", funcname},
                             {"nonterminal", rule.left().name()},
@@ -959,20 +959,20 @@ $${debmes:state}
                     stencil(
                         os, R"(
         case ${case_tag}:
-            // accept
-            accepted_ = true;
-            accepted_value_ = get_arg(1, 0);
+                // Accept
+                _accepted = true;
+                _acceptedValue = GetArg(1, 0);
             return false;
 )",
-                        {"case_tag", case_tag}
+                        {"case_tag", (options.external_token ? "TToken." : "Token.") + case_tag }
                         );
                     break;
                 case zw::gr::action_error:
                     stencil(
                         os, R"(
         case ${case_tag}:
-            sa_.syntax_error();
-            error_ = true;
+                _action.SyntaxError();
+                _error = true;
             return false;
 )",
                         {"case_tag", case_tag}
@@ -1007,8 +1007,8 @@ $${debmes:state}
 
             stencil(
                 os, R"(
-            // reduce
-            return call_${index}_${sa_name}(Nonterminal_${nonterminal}, /*pop*/ ${base}${args});
+                // Reduce
+                return call_${index}_${sa_name}(NonTerminal_${nonterminal}, /*Pop*/ ${base}${args});
 )",
                 {"index", index},
                 {"sa_name", normalize_internal_sa_name(signature[0])},
@@ -1026,8 +1026,8 @@ $${debmes:state}
         stencil(
             os, R"(
         default:
-            sa_.syntax_error();
-            error_ = true;
+                _action.SyntaxError();
+                _error = true;
             return false;
         }
     }
