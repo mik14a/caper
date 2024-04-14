@@ -729,11 +729,11 @@ $${debmes:repost_done}
 
     stencil(
         os, R"(
-    bool call_nothing(Nonterminal nonterminal, int base) {
-        pop_stack(base);
-        int dest_index = (this->*(stack_top()->entry->gotof))(nonterminal);
-        return push_stack(dest_index, value_type());
-    }
+        bool CallNothing(NonTerminal nonTerminal, int @base) {
+            PopStack(@base);
+            var destIndex = StackTop().Entry.Gotof(nonTerminal);
+            return PushStack(destIndex, default);
+        }
 
 )"
         );
