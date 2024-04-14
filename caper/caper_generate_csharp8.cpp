@@ -14,6 +14,18 @@
 
 namespace {
 
+struct semantic_action_entry {
+    std::string              name;
+    std::vector<std::string> args;
+
+    bool operator<(const semantic_action_entry& x) const {
+        if (name < x.name) { return true; }
+        if (x.name < name) { return false; }
+        return args < x.args;
+    }
+};
+
+
 std::string make_type_name(const Type& x, const std::string& smart_pointer_tag) {
     std::string type;
     if (smart_pointer_tag.empty())
@@ -104,7 +116,7 @@ void generate_csharp8(
     const std::string&                  src_filename,
     std::ostream&                       os,
     const GenerateOptions&              options,
-    const std::map<std::string, Type>&,
+    const std::map<std::string, Type>&  terminal_types,
     const std::map<std::string, Type>&  nonterminal_types,
     const std::vector<std::string>&     tokens,
     const action_map_type&              actions,
@@ -246,22 +258,59 @@ $${tokens}
 
 )");
 
+    // semantic action interface
+    std::set<semantic_action_entry> ss;
+    for (auto it = actions.begin(); it != actions.end(); ++it) {
+        const tgt::parsing_table::rule_type& rule = it->first;
+        const SemanticAction& sa = it->second;
+        semantic_action_entry sae;
+        sae.name = sa.name;
+        // 1st argument = out parameter
+        sae.args.push_back((*nonterminal_types.find(rule.left().name())).second.name);
+        for (size_t l = 0; l < sa.args.size(); l++) {
+            sae.args.push_back(sa.args[l].type.name);
+        }
+        ss.insert(sae);
+    }
+
+    stencil(os, R"(
+    interface ISemanticAction
+    {
+        void SyntaxError();
+        void StackOverflow();
+$${methods}
+    }
+
+)",
+        { "methods", [&](std::ostream& os) {
+            for (auto it = ss.begin(); it != ss.end(); ++it) {
+                std::stringstream st;
+                st << "void " << (*it).name << "(out ";
+                bool first = true;
+                for (size_t l = 0; l < (*it).args.size(); l++) {
+                    if (first) { first = false; } else { st << ", "; }
+                    st << ((*it).args[l]) << " " << "arg" << l;
+                }
+                st << ");";
+                stencil(
+                    os, R"(
+        ${method}
+)",
+                    { "method", st.str() }
+                );
+            }
+        }}
+    );
+
     // parser class header
     stencil(
         os, R"(
-template <${token_parameter}class _Value, class _SemanticAction,
-          unsigned int _StackSize = ${default_stack_size}>
-class Parser {
-public:
-    typedef ${token_source} token_type;
-    typedef _Value value_type;
-
-    enum Nonterminal {
+    class Parser<${token_parameter}TValue>
+    {
+        enum Nonterminal {
 )",
-        {"token_parameter", options.external_token ? "class _Token, " : ""},
-        {"token_source", options.external_token ? "_Token" : "Token"},
-        {"default_stack_size", options.dont_use_stl ? "1024" : "0"}
-        );
+        {"token_parameter", options.external_token ? "TToken, " : ""}
+    );
 
     for (const auto& nonterminal_type: nonterminal_types) {
         stencil(
