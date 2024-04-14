@@ -473,34 +473,34 @@ $${pop_stack_implementation}
     if (options.recovery) {
         stencil(
             os, R"(
-    void recover(token_type token, const value_type& value) {
-        rollback_tmp_stack();
-        error_ = false;
+    void Recover(Token token, TValue value) {
+        RollbackTmpStack();
+        _error = false;
 $${debmes:start}
-        while(!stack_top()->entry->handle_error) {
-            pop_stack(1);
-            if (stack_.empty()) {
+        while(!StackTop().Entry.HandleError) {
+            PopStack(1);
+            if (_stack.Empty()) {
 $${debmes:failed}
-                error_ = true;
+                _error = true;
                 return;
             }
         }
 $${debmes:done}
         // post error_token;
 $${debmes:post_error_start}
-        while ((this->*(stack_top()->entry->state))(${recovery_token}, value_type()));
+        while ((this->*(StackTop().Entry.State))(${recovery_token}, default));
 $${debmes:post_error_done}
-        commit_tmp_stack();
+        CommitTmpStack();
         // repost original token
         // if it still causes error, discard it;
 $${debmes:repost_start}
-        while ((this->*(stack_top()->entry->state))(token, value));
+        while ((this->*(StackTop().Entry.State))(token, Value));
 $${debmes:repost_done}
-        if (!error_) {
-            commit_tmp_stack();
+        if (!_error) {
+            CommitTmpStack();
         }
         if (token != ${token_eof}) {
-            error_ = false;
+            _error = false;
         }
     }
 
@@ -546,8 +546,8 @@ $${debmes:repost_done}
     } else {
         stencil(
             os, R"(
-    void recover(token_type, const value_type&) {
-    }
+        void Recover(Token token, TValue value) {
+        }
 
 )"
             );
