@@ -182,7 +182,7 @@ $${tokens}
         os, R"(
     class Stack<T>
     {
-        public Stack(int stackSize) { _stackSize = stackSize; }
+        public Stack(uint stackSize) { _stackSize = stackSize; }
 
         public void RollbackTmp() {
             _gap = _stack.Count;
@@ -250,7 +250,7 @@ $${tokens}
             (this[d - 2], this[d - 1]) = (this[d - 1], this[d - 2]);
         }
 
-        readonly int _stackSize;
+        readonly uint _stackSize;
         readonly List<T> _stack = new List<T>();
         readonly List<T> _tmp = new List<T>();
         int _gap = 0;
@@ -325,7 +325,8 @@ $${methods}
         os, R"(
         }
 
-        public Parser(ISemanticAction sa) {
+        public Parser(ISemanticAction sa, uint stackSize) {
+            _stack = new Stack<StackFrame>(stackSize);
             _action = sa;
             Reset();
         }
@@ -373,90 +374,96 @@ $${methods}
     // implementation
     stencil(
         os, R"(
-private:
-    typedef Parser<${token_paremter}_Value, _SemanticAction, _StackSize> self_type;
+        delegate bool StateType(Token token, TValue Value);
+        delegate int GotofType(NonTerminal nonterminal);
 
-    typedef bool (self_type::*state_type)(token_type, const value_type&);
-    typedef int (self_type::*gotof_type)(Nonterminal);
+        private readonly uint _stackSize;
+        private readonly ISemanticAction _action;
+        private bool _accepted;
+        private bool _error;
+        private TValue _acceptedValue;
 
-    bool            accepted_;
-    bool            error_;
-    value_type      accepted_value_;
-    _SemanticAction& sa_;
+        private readonly struct TableEntry
+        {
+            public readonly StateType State;
+            public readonly GotofType Gotof;
+            public readonly bool HandleError;
+            public TableEntry(StateType state, GotofType gotof, bool handleError) {
+                State = state;
+                Gotof = gotof;
+                HandleError = handleError;
+            }
+        }
 
-    struct table_entry {
-        state_type  state;
-        gotof_type  gotof;
-        bool        handle_error;
-    };
+        private readonly struct StackFrame
+        {
+            public readonly TableEntry Entry;
+            public readonly TValue Value;
+            public readonly int SequenceLength;
+            public StackFrame(TableEntry entry, TValue value, int sequenceLength) {
+                Entry = entry;
+                Value = value;
+                SequenceLength = sequenceLength;
+            }
+        }
 
-    struct stack_frame {
-        const table_entry*  entry;
-        value_type          value;
-        int                 sequence_length;
-
-        stack_frame(const table_entry* e, const value_type& v, int sl)
-            : entry(e), value(v), sequence_length(sl) {}
-    };
-
-)",
-        {"token_paremter", options.external_token ? "_Token, " : ""}
-        );
+)"
+    );
 
     // stack operation
     stencil(
         os, R"(
-    Stack<stack_frame, _StackSize> stack_;
+        readonly Stack<StackFrame> _stack;
 
-    bool push_stack(int state_index, const value_type& v, int sl = 0) {
-        bool f = stack_.push(stack_frame(entry(state_index), v, sl));
-        assert(!error_);
-        if (!f) {
-            error_ = true;
-            sa_.stack_overflow();
+        bool PushStack(int stateIndex, TValue value, int sequenceLength = 0) {
+            bool f = _stack.Push(new StackFrame(Entry(stateIndex), value, sequenceLength));
+            Debug.Assert(!_error);
+            if (!f) {
+                _error = true;
+                _action.StackOverflow();
+            }
+            return f;
         }
-        return f;
-    }
 
-    void pop_stack(size_t n) {
+        void PopStack(int n) {
 $${pop_stack_implementation}
-    }
+        }
 
-    stack_frame* stack_top() {
-        return &stack_.top();
-    }
+        StackFrame StackTop() {
+            return _stack.Top();
+        }
 
-    const value_type& get_arg(size_t base, size_t index) {
-        return stack_.get_arg(base, index).value;
-    }
+        TValue GetArg(int @base, int index) {
+            return _stack[@base, index].Value;
+        }
 
-    void clear_stack() {
-        stack_.clear();
-    }
+        void ClearStack() {
+            _stack.Clear();
+        }
 
-    void rollback_tmp_stack() {
-        stack_.rollback_tmp();
-    }
+        void RollbackTmpStack() {
+            _stack.RollbackTmp();
+        }
 
-    void commit_tmp_stack() {
-        stack_.commit_tmp();
-    }
+        void CommitTmpStack() {
+            _stack.CommitTmp();
+        }
 
 )",
         {"pop_stack_implementation", [&](std::ostream& os) {
                 if (options.allow_ebnf) {
                     stencil(
                         os, R"(
-        int nn = int(n);
-        while(nn--) {
-            stack_.pop(1 + stack_.top().sequence_length);
-        }
+            var nn = n;
+            while(nn--) {
+                _stack.Pop(1 + _stack.Top().SequenceLength);
+            }
 )"
                         );
                 } else {
                     stencil(
                         os, R"(
-        stack_.pop(n);
+            _stack.Pop(n);
 )"
                         );
                 }
