@@ -206,7 +206,7 @@ $${tokens}
     }
 
     stencil(os, R"(
-    interface ISemanticAction
+    interface ISemanticAction<T>
     {
         void SyntaxError();
         void StackOverflow();
@@ -221,7 +221,7 @@ $${methods}
         ${cast}
 )",
                     { "cast", [&](std::ostream& os) {
-                        os << "void UpCast(out object x, " << (*i) << " y);";
+                        os << "T UpCast(" << (*i) << " value);";
                     }}
                 );
             }
@@ -230,7 +230,7 @@ $${methods}
         ${cast}
 )",
                     { "cast", [&](std::ostream& os) {
-                        os << "void DownCast(out " << (*i) << " x, object y);";
+                        os << (*i) << " DownCast(T value);";
                     } }
                 );
             }
@@ -419,11 +419,11 @@ $${entries}
     // implementation
     stencil(
         os, R"(
-        delegate bool StateType(Token token, TValue Value);
-        delegate int GotofType(NonTerminal nonterminal);
+        delegate bool StateType(Token token, TValue value);
+        delegate int GotofType(NonTerminal nonTerminal);
 
         private readonly uint _stackSize;
-        private readonly ISemanticAction _action;
+        private readonly ISemanticAction<TValue> _action;
         private bool _accepted;
         private bool _error;
         private TValue _acceptedValue;
@@ -853,7 +853,7 @@ $${debmes:repost_done}
                 if (arg.type.extension == Extension::None) {
                     stencil(
                         os, R"(
-            _action.DownCast(out var arg${index}, ${get_arg}(@base, arg${index}Index));
+            var arg${index} = _action.DownCast(${get_arg}(@base, arg${index}Index));
 )",
                         {"arg_type", make_type_name(arg.type, options.smart_pointer_tag)},
                         {"get_arg", get_arg},
@@ -873,7 +873,7 @@ $${debmes:repost_done}
             stencil(
                 os, R"(
             var r = _action.${semantic_action_name}(${args});
-            _action.UpCast(out var v, r);
+            var v = _action.UpCast(r);
             PopStack(@base);
             var destIndex = StackTop().Entry.Gotof(nonTerminal);
             return PushStack(destIndex, (TValue)v);
