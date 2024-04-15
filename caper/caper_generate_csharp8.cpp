@@ -221,7 +221,7 @@ $${methods}
         ${cast}
 )",
                     { "cast", [&](std::ostream& os) {
-                        os << "T UpCast(" << (*i) << " value);";
+                        os << "T From"<< (*i) << "(" << (*i) << " value);";
                     }}
                 );
             }
@@ -230,7 +230,7 @@ $${methods}
         ${cast}
 )",
                     { "cast", [&](std::ostream& os) {
-                        os << (*i) << " DownCast(T value);";
+                        os << (*i) << " To" << (*i) << "(T value);";
                     } }
                 );
             }
@@ -853,7 +853,7 @@ $${debmes:repost_done}
                 if (arg.type.extension == Extension::None) {
                     stencil(
                         os, R"(
-            var arg${index} = _action.DownCast(${get_arg}(@base, arg${index}Index));
+            var arg${index} = _action.To${arg_type}(${get_arg}(@base, arg${index}Index));
 )",
                         {"arg_type", make_type_name(arg.type, options.smart_pointer_tag)},
                         {"get_arg", get_arg},
@@ -873,10 +873,10 @@ $${debmes:repost_done}
             stencil(
                 os, R"(
             var r = _action.${semantic_action_name}(${args});
-            var v = _action.UpCast(r);
+            var v = _action.From${nonterminal_type}(r);
             PopStack(@base);
-            var destIndex = StackTop().Entry.Gotof(nonTerminal);
-            return PushStack(destIndex, (TValue)v);
+            var destIndex = StackTop().Entry.Goto(nonTerminal);
+            return PushStack(destIndex, v);
         }
 
 )",
