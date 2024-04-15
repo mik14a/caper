@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
+        <LangVersion>8.0</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Include="..\..\samples\cs\calc0_8_main.cs" Link="calc0_8_main.cs" />
+      <Compile Include="..\..\samples\cs\calc0_8.cs" Link="calc0_8.cs" />
+    </ItemGroup>
+</Project>
