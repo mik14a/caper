@@ -405,7 +405,7 @@ $${entries}
                 for (const auto& state : table.states()) {
                     stencil(
                         os, R"(
-                new TableEntry(State${i}, Gotof${i}, ${handle_error}),
+                new TableEntry(State${i}, Goto${i}, ${handle_error}),
 )",
                         {"i", i},
                         {"handle_error", state.handle_error}
@@ -420,9 +420,8 @@ $${entries}
     stencil(
         os, R"(
         delegate bool StateType(Token token, TValue value);
-        delegate int GotofType(NonTerminal nonTerminal);
+        delegate int GotoType(NonTerminal nonTerminal);
 
-        private readonly uint _stackSize;
         private readonly ISemanticAction<TValue> _action;
         private bool _accepted;
         private bool _error;
@@ -431,11 +430,11 @@ $${entries}
         private readonly struct TableEntry
         {
             public readonly StateType State;
-            public readonly GotofType Gotof;
+            public readonly GotoType Goto;
             public readonly bool HandleError;
-            public TableEntry(StateType state, GotofType gotof, bool handleError) {
-                State = state;
-                Gotof = gotof;
+            public TableEntry(StateType statef, GotoType gotof, bool handleError) {
+                State = statef;
+                Goto = gotof;
                 HandleError = handleError;
             }
         }
@@ -777,7 +776,7 @@ $${debmes:repost_done}
         os, R"(
         bool CallNothing(NonTerminal nonTerminal, int @base) {
             PopStack(@base);
-            var destIndex = StackTop().Entry.Gotof(nonTerminal);
+            var destIndex = StackTop().Entry.Goto(nonTerminal);
             return PushStack(destIndex, default);
         }
 
@@ -1084,7 +1083,7 @@ $${debmes:state}
         // gotof header
         stencil(
             os, R"(
-        int Gotof${state_no}(NonTerminal nonTerminal) {
+        int Goto${state_no}(NonTerminal nonTerminal) {
 )",
             {"state_no", state.no}
             );
