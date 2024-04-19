@@ -168,7 +168,8 @@ namespace ${namespace_name}
         // token enumeration
         stencil(
             os, R"(
-    enum Token {
+    enum Token
+    {
 $${tokens}
     }
 
@@ -344,7 +345,8 @@ $${methods}
         os, R"(
     class Parser<TValue>
     {
-        enum NonTerminal {
+        enum NonTerminal
+        {
 )"
     );
 
@@ -431,12 +433,12 @@ $${entries}
         delegate bool StateType(${token_name} token, TValue value);
         delegate int GotoType(NonTerminal nonTerminal);
 
-        private readonly ISemanticAction<TValue> _action;
-        private bool _accepted;
-        private bool _error;
-        private TValue _acceptedValue;
+        readonly ISemanticAction<TValue> _action;
+        bool _accepted;
+        bool _error;
+        TValue _acceptedValue;
 
-        private readonly struct TableEntry
+        readonly struct TableEntry
         {
             public readonly StateType State;
             public readonly GotoType Goto;
@@ -448,7 +450,7 @@ $${entries}
             }
         }
 
-        private readonly struct StackFrame
+        readonly struct StackFrame
         {
             public readonly TableEntry Entry;
             public readonly TValue Value;
@@ -471,7 +473,7 @@ $${entries}
         readonly Stack<StackFrame> _stack;
 
         bool PushStack(int stateIndex, TValue value, int sequenceLength = 0) {
-            bool f = _stack.Push(new StackFrame(_entries[stateIndex], value, sequenceLength));
+            var f = _stack.Push(new StackFrame(_entries[stateIndex], value, sequenceLength));
             Debug.Assert(!_error);
             if (!f) {
                 _error = true;
@@ -606,7 +608,7 @@ $${debmes:repost_done}
 
 )", 
             { "token_name", options.external_token ? options.token_name : "Token" }
-            );
+        );
     }
 
     if (options.allow_ebnf) {
@@ -911,7 +913,7 @@ $${debmes:repost_done}
             os, R"(
         bool State${state_no}(${token_name} token, TValue value) {
 $${debmes:state}
-            switch(token) {
+            switch (token) {
 )",
             {"state_no", state.no},
             {"token_name", options.external_token ? options.token_name : "Token"},
@@ -1104,7 +1106,7 @@ $${debmes:state}
         std::stringstream ss;
         stencil(
             ss, R"(
-            switch(nonTerminal) {
+            switch (nonTerminal) {
 )"
             );
         bool output_switch = false;
