@@ -25,6 +25,15 @@ struct semantic_action_entry {
     }
 };
 
+std::string capitalize_token(const std::string s) {
+    if (s == "eof") {
+        return "Eof";
+    } else if (s == "error") {
+        return "Error";
+    } else {
+        return s;
+    }
+}
 
 std::string make_type_name(const Type& x, const std::string& smart_pointer_tag) {
     std::string type;
@@ -171,7 +180,7 @@ $${tokens}
         ${prefix}${token},
 )",
                         {"prefix", options.token_prefix},
-                        {"token", token}
+                        {"token", capitalize_token(token)}
                     );
                 }
             }}
@@ -983,7 +992,7 @@ $${debmes:state}
                             os, R"(
             case ${case_tag}:
 )",
-                            { "case_tag", (options.external_token ? options.token_name + "." : "Token.") + case_tag }
+                            { "case_tag", (options.external_token ? options.token_name + "." : "Token.") + capitalize_token(case_tag) }
                             );
                         std::string funcname = "CallNothing";
                         if (k) {
@@ -1012,7 +1021,7 @@ $${debmes:state}
                 _acceptedValue = GetArg(1, 0);
                 return false;
 )",
-                        { "case_tag", (options.external_token ? options.token_name + "." : "Token.") + case_tag }
+                        { "case_tag", (options.external_token ? options.token_name + "." : "Token.") + capitalize_token(case_tag) }
                         );
                     break;
                 case zw::gr::action_error:
@@ -1047,7 +1056,7 @@ $${debmes:state}
                     os, R"(
             case ${case}:
 )",
-                    {"case", (options.external_token ? options.token_name + "." : "Token.") + cases[j]}
+                    {"case", (options.external_token ? options.token_name + "." : "Token.") + capitalize_token(cases[j])}
                     );
             }
 
