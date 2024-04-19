@@ -146,6 +146,13 @@ void make_cpg_parser(cpg::parser& p) {
             return Value(args[0]);
         },
         "DontUseSTLDecl", token_semicolon);
+    make_rule(
+        g, p,
+        "Declaration",
+        [](const arguments_type& args) -> Value {
+            return Value(args[0]);
+        },
+        "ValueTypeDecl", token_semicolon);
 
     // ..%token宣言
     make_rule(
@@ -295,6 +302,17 @@ void make_cpg_parser(cpg::parser& p) {
             return Value(p);
         },
         token_directive_dont_use_stl);
+
+    // ..%value_type宣言
+    make_rule(
+        g, p,
+        "ValueTypeDecl",
+        [](const arguments_type& args) -> Value {
+            auto p = std::make_shared<ValueTypeDecl>(
+                range(args), get_symbol<Identifier>(args[1]));
+            return Value(p);
+        },
+        token_directive_value_type, token_identifier);
 
     // .文法セクション
     make_rule(

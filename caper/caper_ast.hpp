@@ -261,6 +261,13 @@ struct DontUseSTLDecl : public Declaration {
     DontUseSTLDecl(const Range& r) : Declaration(r) {}
 };
 
+struct ValueTypeDecl : public Declaration {
+    std::string     name;
+
+    ValueTypeDecl(const Range& r, const std::string& as)
+        : Declaration(r), name(as) {}
+};
+
 struct Declarations : public Node {
     typedef std::vector<std::shared_ptr<Declaration>> declarations_type;
 
@@ -297,6 +304,7 @@ struct GenerateOptions {
     bool            allow_ebnf      = false;
     std::string     access_modifier = "";
     std::string     namespace_name  = "caper_parser";
+    std::string     value_type      = "";
     bool            dont_use_stl    = false;
     bool            recovery        = false;
     std::string     recovery_token  = "error";

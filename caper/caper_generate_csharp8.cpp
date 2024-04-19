@@ -216,7 +216,7 @@ $${tokens}
     }
 
     stencil(os, R"(
-    interface ISemanticAction<T>
+    interface ISemanticAction${value_type_template}
     {
         void SyntaxError();
         void StackOverflow();
@@ -225,24 +225,27 @@ $${methods}
     }
 
 )",
+        { "value_type_template", options.value_type.empty() ? "<T>" : ""},
         { "casts", [&](std::ostream& os) {
-            for (auto i = types.begin(); i != types.end(); ++i) {
-                stencil(os, R"(
+            if (options.value_type.empty()) {
+                for (auto i = types.begin(); i != types.end(); ++i) {
+                    stencil(os, R"(
         ${cast}
 )",
-                    { "cast", [&](std::ostream& os) {
-                        os << "T From"<< (*i) << "(" << (*i) << " value);";
-                    }}
-                );
-            }
-            for (auto i = types.begin(); i != types.end(); ++i) {
-                stencil(os, R"(
+                        { "cast", [&](std::ostream& os) {
+                            os << "T From" << (*i) << "(" << (*i) << " value);";
+                        } }
+                    );
+                }
+                for (auto i = types.begin(); i != types.end(); ++i) {
+                    stencil(os, R"(
         ${cast}
 )",
-                    { "cast", [&](std::ostream& os) {
-                        os << (*i) << " To" << (*i) << "(T value);";
-                    } }
-                );
+                        { "cast", [&](std::ostream& os) {
+                            os << (*i) << " To" << (*i) << "(T value);";
+                        } }
+                    );
+                }
             }
         } },
         { "methods", [&](std::ostream& os) {
@@ -338,16 +341,18 @@ $${methods}
         int _gap = 0;
     }
 
-)");
+)"
+);
 
     // parser class header
     stencil(
         os, R"(
-    class Parser<TValue>
+    class Parser${value_type_template}
     {
         enum NonTerminal
         {
-)"
+)",
+        {"value_type_template", options.value_type.empty() ? "<TValue>" : ""}
     );
 
     for (const auto& nonterminal_type: nonterminal_types) {
@@ -363,7 +368,7 @@ $${methods}
         os, R"(
         }
 
-        public Parser(ISemanticAction<TValue> sa) {
+        public Parser(ISemanticAction${value_type_template} sa) {
             _entries = new List<TableEntry> {
 $${entries}
             };
@@ -385,7 +390,7 @@ $${entries}
             }
         }
 
-        public bool Post(${token_name} token, TValue value) {
+        public bool Post(${token_name} token, ${value_type} value) {
             RollbackTmpStack();
             _error = false;
             while (StackTop().Entry.State(token, value))
@@ -398,7 +403,7 @@ $${entries}
             return _accepted || _error;
         }
 
-        public bool Accept(out TValue value) {
+        public bool Accept(out ${value_type} value) {
             Debug.Assert(_accepted);
             value = default;
             if (_error) { return false; }
@@ -411,6 +416,8 @@ $${entries}
 )",
         { "first_state", table.first_state() },
         { "token_name", options.external_token ? options.token_name : "Token" },
+        { "value_type_template", options.value_type.empty() ? "<TValue>" : "" },
+        { "value_type", options.value_type.empty() ? "TValue" : options.value_type },
         { "entries", [&](std::ostream& os) {
                 int i = 0;
                 for (const auto& state : table.states()) {
@@ -430,13 +437,13 @@ $${entries}
     // implementation
     stencil(
         os, R"(
-        delegate bool StateType(${token_name} token, TValue value);
+        delegate bool StateType(${token_name} token, ${value_type} value);
         delegate int GotoType(NonTerminal nonTerminal);
 
-        readonly ISemanticAction<TValue> _action;
+        readonly ISemanticAction${value_type_template} _action;
         bool _accepted;
         bool _error;
-        TValue _acceptedValue;
+        ${value_type} _acceptedValue;
 
         readonly struct TableEntry
         {
@@ -453,9 +460,9 @@ $${entries}
         readonly struct StackFrame
         {
             public readonly TableEntry Entry;
-            public readonly TValue Value;
+            public readonly ${value_type} Value;
             public readonly int SequenceLength;
-            public StackFrame(TableEntry entry, TValue value, int sequenceLength) {
+            public StackFrame(TableEntry entry, ${value_type} value, int sequenceLength) {
                 Entry = entry;
                 Value = value;
                 SequenceLength = sequenceLength;
@@ -463,7 +470,9 @@ $${entries}
         }
 
 )",
-        { "token_name", options.external_token ? options.token_name : "Token" }
+        { "token_name", options.external_token ? options.token_name : "Token" },
+        { "value_type_template", options.value_type.empty() ? "<TValue>" : "" },
+        { "value_type", options.value_type.empty() ? "TValue" : options.value_type }
     );
 
     // stack operation
@@ -472,7 +481,7 @@ $${entries}
         readonly List<TableEntry> _entries;
         readonly Stack<StackFrame> _stack;
 
-        bool PushStack(int stateIndex, TValue value, int sequenceLength = 0) {
+        bool PushStack(int stateIndex, ${value_type} value, int sequenceLength = 0) {
             var f = _stack.Push(new StackFrame(_entries[stateIndex], value, sequenceLength));
             Debug.Assert(!_error);
             if (!f) {
@@ -490,9 +499,7 @@ $${pop_stack_implementation}
             return _stack.Top();
         }
 
-        TValue GetArg(int @base, int index) {
-            return _stack[@base, index].Value;
-        }
+${get_arg}
 
         void ClearStack() {
             _stack.Clear();
@@ -507,6 +514,28 @@ $${pop_stack_implementation}
         }
 
 )",
+        { "value_type", options.value_type.empty() ? "TValue" : options.value_type },
+        { "get_arg" , [&](std::ostream& os) {
+            if (options.value_type.empty()) {
+                stencil(os, R"(
+        ${value_type} GetArg(int @base, int index) {
+            return _stack[@base, index].Value;
+        }
+)");
+            } else {
+                stencil(os, R"(
+        ${value_type} GetArg(int @base, int index) {
+            return _stack[@base, index].Value;
+        }
+
+        T GetArg<T>(int @base, int index) where T : ${value_type} {
+            return (T)_stack[@base, index].Value;
+        }
+)",
+                    {"value_type", options.value_type}
+                );
+            }
+        } },
         {"pop_stack_implementation", [&](std::ostream& os) {
                 if (options.allow_ebnf) {
                     stencil(
@@ -603,11 +632,12 @@ $${debmes:repost_done}
     } else {
         stencil(
             os, R"(
-        void Recover(${token_name} token, TValue value) {
+        void Recover(${token_name} token, ${value_type} value) {
         }
 
 )", 
-            { "token_name", options.external_token ? options.token_name : "Token" }
+            { "token_name", options.external_token ? options.token_name : "Token" },
+            { "value_type", options.value_type.empty() ? "TValue" : options.value_type }
         );
     }
 
@@ -863,14 +893,25 @@ $${debmes:repost_done}
             for (size_t l = 0 ; l < sa.args.size() ; l++) {
                 const auto& arg = sa.args[l];
                 if (arg.type.extension == Extension::None) {
-                    stencil(
-                        os, R"(
+                    if (options.value_type.empty()) {
+                        stencil(
+                            os, R"(
             var arg${index} = _action.To${arg_type}(${get_arg}(@base, arg${index}Index));
 )",
-                        {"arg_type", make_type_name(arg.type, options.smart_pointer_tag)},
-                        {"get_arg", get_arg},
-                        {"index", l}
+                            { "arg_type", make_type_name(arg.type, options.smart_pointer_tag) },
+                            { "get_arg", get_arg },
+                            { "index", l }
                         );
+                    } else {
+                        stencil(
+                            os, R"(
+            var arg${index} = ${get_arg}<${arg_type}>(@base, arg${index}Index);
+)",
+                            { "arg_type", make_type_name(arg.type, options.smart_pointer_tag) },
+                            { "get_arg", get_arg },
+                            { "index", l }
+                        );
+                    }
                 } else {
                     stencil(
                         os, R"(
@@ -882,8 +923,9 @@ $${debmes:repost_done}
             }
 
             // semantic action / automatic value conversion
-            stencil(
-                os, R"(
+            if (options.value_type.empty()) {
+                stencil(
+                    os, R"(
             var r = _action.${semantic_action_name}(${args});
             var v = _action.From${nonterminal_type}(r);
             PopStack(@base);
@@ -892,17 +934,37 @@ $${debmes:repost_done}
         }
 
 )",
-                {"nonterminal_type", make_type_name(rule_type, options.smart_pointer_tag)},
-                {"semantic_action_name", normalize_sa_call(sa.name)},
-                {"args", [&](std::ostream& os) {
+                    { "nonterminal_type", make_type_name(rule_type, options.smart_pointer_tag) },
+                    { "semantic_action_name", normalize_sa_call(sa.name) },
+                    { "args", [&](std::ostream& os) {
                         bool first = true;
-                        for (size_t l = 0 ; l < sa.args.size() ; l++) {
-                            if (first) { first = false; }
-                            else { os << ", "; }
+                        for (size_t l = 0; l < sa.args.size(); l++) {
+                            if (first) { first = false; } else { os << ", "; }
                             os << "arg" << l;
                         }
-                    }}
+                    } }
                 );
+            } else {
+                stencil(
+                    os, R"(
+            var r = _action.${semantic_action_name}(${args});
+            PopStack(@base);
+            var destIndex = StackTop().Entry.Goto(nonTerminal);
+            return PushStack(destIndex, r);
+        }
+
+)",
+                    { "nonterminal_type", make_type_name(rule_type, options.smart_pointer_tag) },
+                    { "semantic_action_name", normalize_sa_call(sa.name) },
+                    { "args", [&](std::ostream& os) {
+                        bool first = true;
+                        for (size_t l = 0; l < sa.args.size(); l++) {
+                            if (first) { first = false; } else { os << ", "; }
+                            os << "arg" << l;
+                        }
+                    } }
+                );
+            }
         }
     }
 
@@ -911,19 +973,21 @@ $${debmes:repost_done}
         // state header
         stencil(
             os, R"(
-        bool State${state_no}(${token_name} token, TValue value) {
+        bool State${state_no}(${token_name} token, ${value_type} value) {
 $${debmes:state}
             switch (token) {
 )",
             {"state_no", state.no},
             {"token_name", options.external_token ? options.token_name : "Token"},
-            {"debmes:state", [&](std::ostream& os){
+            {"value_type", options.value_type.empty() ? "TValue" : options.value_type},
+            {"debmes:state", [&](std::ostream& os) {
                     if (options.debug_parser) {
                         stencil(
                             os, R"(
-        std::cerr << "State${state_no} << " << token_label(token) << "\n";
+            System.Console.Error.WriteLine(${d}"[State${state_no}] Token: {token}, Value: {value}");
 )",
-                            {"state_no", state.no}
+                            {"state_no", state.no},
+                            {"d", "$"}
                             );
                     }}}
             );

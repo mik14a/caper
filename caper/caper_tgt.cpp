@@ -90,6 +90,10 @@ void collect_informations(
             // %dont_use_stléŒ¾
             options.dont_use_stl = true;
         }
+        if (auto valuetypedecl = downcast<ValueTypeDecl>(x)) {
+            // %value_typeéŒ¾
+            options.value_type = valuetypedecl->name;
+        }
     }
 
     // ‹K‘¥
