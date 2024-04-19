@@ -56,6 +56,9 @@ void collect_informations(
         if (auto externaltokendecl = downcast<ExternalTokenDecl>(x)) {
             // %external_tokenêÈåæ
             options.external_token = true;
+            if (!externaltokendecl->name.empty()) {
+                options.token_name = externaltokendecl->name;
+            }
         }
         if (auto allow_ebnf = downcast<AllowEBNF>(x)) {
             // %allow_ebnfêÈåæ

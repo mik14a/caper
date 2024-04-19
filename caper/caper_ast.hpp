@@ -219,7 +219,10 @@ struct TokenPrefixDecl : public Declaration {
 };
 
 struct ExternalTokenDecl : public Declaration {
-    ExternalTokenDecl(const Range& r) : Declaration(r) {}
+    std::string     name;
+
+    ExternalTokenDecl(const Range& r, const std::string& as)
+        : Declaration(r), name(as) {}
 };
 
 struct AllowEBNF : public Declaration {
@@ -290,6 +293,7 @@ struct GenerateOptions {
     bool            debug_parser    = false;
     std::string     token_prefix    = "token_";
     bool            external_token  = false;
+    std::string     token_name      = "Token";
     bool            allow_ebnf      = false;
     std::string     access_modifier = "";
     std::string     namespace_name  = "caper_parser";

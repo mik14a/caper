@@ -210,10 +210,19 @@ void make_cpg_parser(cpg::parser& p) {
         g, p,
         "ExternalTokenDecl",
         [](const arguments_type& args) -> Value {
-            auto p = std::make_shared<ExternalTokenDecl>(range(args));
+            auto p = std::make_shared<ExternalTokenDecl>(range(args), "");
             return Value(p);
         },
         token_directive_external_token);
+    make_rule(
+        g, p,
+        "ExternalTokenDecl",
+        [](const arguments_type& args) -> Value {
+            auto p = std::make_shared<ExternalTokenDecl>(
+                range(args), get_symbol<Identifier>(args[1]));
+            return Value(p);
+        },
+        token_directive_external_token, token_identifier);
 
     // ..%allow_ebnféŒ¾
     make_rule(
