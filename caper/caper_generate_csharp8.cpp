@@ -333,11 +333,10 @@ $${methods}
     // parser class header
     stencil(
         os, R"(
-    class Parser<${token_parameter}TValue>
+    class Parser<TValue>
     {
         enum NonTerminal {
-)",
-        {"token_parameter", options.external_token ? "TToken, " : ""}
+)"
     );
 
     for (const auto& nonterminal_type: nonterminal_types) {
@@ -375,7 +374,7 @@ $${entries}
             }
         }
 
-        public bool Post(Token token, TValue value) {
+        public bool Post(${token_name} token, TValue value) {
             RollbackTmpStack();
             _error = false;
             while (StackTop().Entry.State(token, value))
@@ -400,6 +399,7 @@ $${entries}
 
 )",
         { "first_state", table.first_state() },
+        { "token_name", options.external_token ? options.token_name : "Token" },
         { "entries", [&](std::ostream& os) {
                 int i = 0;
                 for (const auto& state : table.states()) {
@@ -419,7 +419,7 @@ $${entries}
     // implementation
     stencil(
         os, R"(
-        delegate bool StateType(Token token, TValue value);
+        delegate bool StateType(${token_name} token, TValue value);
         delegate int GotoType(NonTerminal nonTerminal);
 
         private readonly ISemanticAction<TValue> _action;
@@ -451,7 +451,8 @@ $${entries}
             }
         }
 
-)"
+)",
+        { "token_name", options.external_token ? options.token_name : "Token" }
     );
 
     // stack operation
@@ -591,10 +592,11 @@ $${debmes:repost_done}
     } else {
         stencil(
             os, R"(
-        void Recover(Token token, TValue value) {
+        void Recover(${token_name} token, TValue value) {
         }
 
-)"
+)", 
+            { "token_name", options.external_token ? options.token_name : "Token" }
             );
     }
 
@@ -898,11 +900,12 @@ $${debmes:repost_done}
         // state header
         stencil(
             os, R"(
-        bool State${state_no}(Token token, TValue value) {
+        bool State${state_no}(${token_name} token, TValue value) {
 $${debmes:state}
             switch(token) {
 )",
             {"state_no", state.no},
+            {"token_name", options.external_token ? options.token_name : "Token"},
             {"debmes:state", [&](std::ostream& os){
                     if (options.debug_parser) {
                         stencil(
@@ -947,7 +950,7 @@ $${debmes:state}
                 PushStack(/*State*/ ${dest_index}, value);
                 return false;
 )",
-                        {"case_tag", (options.external_token ? "TToken." : "Token.") + case_tag},
+                        {"case_tag", (options.external_token ? options.token_name + "." : "Token.") + case_tag},
                         {"dest_index", action.dest_index}
                         );
                     break;
@@ -980,7 +983,7 @@ $${debmes:state}
                             os, R"(
             case ${case_tag}:
 )",
-                            {"case_tag", (options.external_token ? "TToken." : "Token.") + case_tag}
+                            { "case_tag", (options.external_token ? options.token_name + "." : "Token.") + case_tag }
                             );
                         std::string funcname = "CallNothing";
                         if (k) {
@@ -1009,7 +1012,7 @@ $${debmes:state}
                 _acceptedValue = GetArg(1, 0);
                 return false;
 )",
-                        {"case_tag", (options.external_token ? "TToken." : "Token.") + case_tag }
+                        { "case_tag", (options.external_token ? options.token_name + "." : "Token.") + case_tag }
                         );
                     break;
                 case zw::gr::action_error:
@@ -1044,7 +1047,7 @@ $${debmes:state}
                     os, R"(
             case ${case}:
 )",
-                    {"case", (options.external_token ? "TToken." : "Token.") + cases[j]}
+                    {"case", (options.external_token ? options.token_name + "." : "Token.") + cases[j]}
                     );
             }
 
