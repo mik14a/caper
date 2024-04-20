@@ -408,12 +408,10 @@ $${entries}
             return _accepted || _error;
         }
 
-        public bool Accept(out ${value_type} value) {
+        public bool Accept(out ${accept_value_type} value) {
             Debug.Assert(_accepted);
-            value = default;
-            if (_error) { return false; }
-            value = _acceptedValue;
-            return true;
+            value = !_error ? _acceptedValue : default;
+            return !_error;
         }
 
         public bool Error() { return _error; }
@@ -423,6 +421,9 @@ $${entries}
         { "token_name", options.external_token ? options.token_name : "Token" },
         { "value_type_template", options.value_type.empty() ? "<TValue>" : "" },
         { "value_type", options.value_type.empty() ? "TValue" : options.value_type },
+        { "accept_value_type",
+            options.value_type.empty() ? "TValue" : table.get_grammar().begin()->right().begin()->name()
+        },
         { "entries", [&](std::ostream& os) {
                 int i = 0;
                 for (const auto& state : table.states()) {
@@ -448,7 +449,7 @@ $${entries}
         readonly ISemanticAction${value_type_template} _action;
         bool _accepted;
         bool _error;
-        ${value_type} _acceptedValue;
+        ${accept_value_type} _acceptedValue;
 
         readonly struct TableEntry
         {
@@ -477,7 +478,10 @@ $${entries}
 )",
         { "token_name", options.external_token ? options.token_name : "Token" },
         { "value_type_template", options.value_type.empty() ? "<TValue>" : "" },
-        { "value_type", options.value_type.empty() ? "TValue" : options.value_type }
+        { "value_type", options.value_type.empty() ? "TValue" : options.value_type },
+        { "accept_value_type",
+            options.value_type.empty() ? "TValue" : table.get_grammar().begin()->right().begin()->name()
+        }
     );
 
     // stack operation
@@ -1089,11 +1093,16 @@ $${debmes:state}
             case ${case_tag}:
                 // Accept
                 _accepted = true;
-                _acceptedValue = GetArg(1, 0);
+                ${accepted_op}
                 return false;
 )",
-                        { "case_tag", (options.external_token ? options.token_name + "." : "Token.") + capitalize_token(case_tag) }
-                        );
+                        { "case_tag", (options.external_token ? options.token_name + "." : "Token.") + capitalize_token(case_tag) },
+                        { "accepted_op", 
+                            rule.right().size() == 1
+                            ? "_acceptedValue = GetArg<" + rule.right().begin()->name() + ">(1, 0);"
+                            : "_acceptedValue = GetArg(1, 0);"
+                        }
+                    );
                     break;
                 case zw::gr::action_error:
                     stencil(
