@@ -363,7 +363,7 @@ $${methods}
     for (const auto& nonterminal_type: nonterminal_types) {
         stencil(
             os, R"(
-            NonTerminal_${nonterminal_name},
+            ${nonterminal_name},
 )",
             {"nonterminal_name", nonterminal_type.first}
         );
@@ -1078,7 +1078,7 @@ $${debmes:state}
                         stencil(
                             os, R"(
                 // Reduce
-                return ${funcname}(NonTerminal.NonTerminal_${nonterminal}, /*Pop*/ ${base});
+                return ${funcname}(NonTerminal.${nonterminal}, /*Pop*/ ${base});
 )",
                             {"funcname", funcname},
                             {"nonterminal", rule.left().name()},
@@ -1145,7 +1145,7 @@ $${debmes:state}
             stencil(
                 os, R"(
                 // Reduce
-                return Call${index}${sa_name}(NonTerminal.NonTerminal_${nonterminal}, /*Pop*/ ${base}${args});
+                return Call${index}${sa_name}(NonTerminal.${nonterminal}, /*Pop*/ ${base}${args});
 )",
                 {"index", index},
                 {"sa_name", normalize_internal_sa_name(signature[0])},
@@ -1191,7 +1191,7 @@ $${debmes:state}
         for (const auto& pair: state.goto_table) {
             stencil(
                 ss, R"(
-            case NonTerminal.NonTerminal_${nonterminal}: return ${state_index};
+            case NonTerminal.${nonterminal}: return ${state_index};
 )",
                 {"nonterminal", pair.first.name()},
                 {"state_index", pair.second}
