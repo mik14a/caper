@@ -395,6 +395,11 @@ $${entries}
             }
         }
 
+        public bool Post(${token_name} token) {
+            Debug.Assert(token is Token.Eof${post_accepted_tokens});
+            return Post(token, default);
+        }
+
         public bool Post(${token_name} token, ${value_type} value) {
             RollbackTmpStack();
             _error = false;
@@ -424,6 +429,13 @@ $${entries}
         { "accept_value_type",
             options.value_type.empty() ? "TValue" : table.get_grammar().begin()->right().begin()->name()
         },
+        { "post_accepted_tokens",[&](std::ostream& os) {
+            for (const auto& t : terminal_types) {
+                if (t.second.name == "") {
+                    os << " or " << (options.external_token ? options.token_name : "Token") << "." << t.first;
+                }
+            }
+        } },
         { "entries", [&](std::ostream& os) {
                 int i = 0;
                 for (const auto& state : table.states()) {
