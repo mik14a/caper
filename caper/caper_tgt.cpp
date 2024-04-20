@@ -92,7 +92,13 @@ void collect_informations(
         }
         if (auto valuetypedecl = downcast<ValueTypeDecl>(x)) {
             // %value_typeéŒ¾
-            options.value_type = valuetypedecl->name;
+            std::size_t last_dot_pos = valuetypedecl->name.rfind('.');
+            if (last_dot_pos != std::string::npos) {
+                options.value_type_namespace = valuetypedecl->name.substr(0, last_dot_pos);
+                options.value_type = valuetypedecl->name.substr(last_dot_pos + 1);
+            } else {
+                options.value_type = valuetypedecl->name;
+            }
         }
     }
 
@@ -140,7 +146,7 @@ public:
 private:
     const T&                c_;
     original_iterator_type  it_;
-    
+
 };
 
 template <class T, class V>
@@ -158,7 +164,7 @@ std::string make_extended_name(
         std::string x = source_name + "_seq" + std::to_string(n++);
         if (terminals.count(x) == 0 && nonterminals.count(x) == 0) {
             return x;
-        }            
+        }
     }
 }
 
@@ -175,7 +181,7 @@ tgt::symbol find_symbol(
     assert(0);
     return tgt::symbol();
 }
-    
+
 struct PendingKey {
     std::string element;
     Extension   extension;
@@ -248,7 +254,7 @@ void make_target_rule(
 
             PendingKey k { item->name, item->extension, item->skip };
             PendingValue v { extended_name };
-            
+
             r << tgt::nonterminal(extended_name);
             pendings[k] = v;
         } else {

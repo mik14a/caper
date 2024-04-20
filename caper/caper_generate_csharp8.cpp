@@ -158,10 +158,15 @@ void generate_csharp8(
 using System.Collections.Generic;
 using System.Diagnostics;
 
+${value_type_namespace}
+
 namespace ${namespace_name}
 {
 )",
-        {"namespace_name", options.namespace_name}
+        {"namespace_name", options.namespace_name},
+        {"value_type_namespace",
+            !options.value_type_namespace.empty() ? "using " + options.value_type_namespace + ";" : ""
+        }
     );
 
     if (!options.external_token) {

@@ -297,18 +297,19 @@ typedef zw::gr::package<Token, TokenTraits, Value>    cpg;
 typedef zw::gr::package<int, TargetTokenTraits, int>  tgt;
 
 struct GenerateOptions {
-    bool            debug_parser    = false;
-    std::string     token_prefix    = "token_";
-    bool            external_token  = false;
-    std::string     token_name      = "Token";
-    bool            allow_ebnf      = false;
-    std::string     access_modifier = "";
-    std::string     namespace_name  = "caper_parser";
-    std::string     value_type      = "";
-    bool            dont_use_stl    = false;
-    bool            recovery        = false;
-    std::string     recovery_token  = "error";
-    std::string     smart_pointer_tag   = "";
+    bool            debug_parser         = false;
+    std::string     token_prefix         = "token_";
+    bool            external_token       = false;
+    std::string     token_name           = "Token";
+    bool            allow_ebnf           = false;
+    std::string     access_modifier      = "";
+    std::string     namespace_name       = "caper_parser";
+    std::string     value_type           = "";
+    std::string     value_type_namespace = "";
+    bool            dont_use_stl         = false;
+    bool            recovery             = false;
+    std::string     recovery_token       = "error";
+    std::string     smart_pointer_tag    = "";
 };
 
 struct Type {
