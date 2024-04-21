@@ -349,6 +349,11 @@ $${methods}
 )"
 );
 
+    const auto& root_name = table.get_grammar().begin()->right().begin()->name();
+    const auto& accept_value_type = !options.value_type.empty()
+        ? nonterminal_types.find(root_name)->second.name
+        : options.value_type.empty() ? "TValue" : options.value_type;
+
     // parser class header
     stencil(
         os, R"(
@@ -396,7 +401,7 @@ $${entries}
         }
 
         public bool Post(${token_name} token) {
-            Debug.Assert(token is Token.Eof${post_accepted_tokens});
+            Debug.Assert(token == ${token_eof}${post_accepted_tokens});
             return Post(token, default);
         }
 
@@ -426,13 +431,16 @@ $${entries}
         { "token_name", options.external_token ? options.token_name : "Token" },
         { "value_type_template", options.value_type.empty() ? "<TValue>" : "" },
         { "value_type", options.value_type.empty() ? "TValue" : options.value_type },
-        { "accept_value_type",
-            options.value_type.empty() ? "TValue" : table.get_grammar().begin()->right().begin()->name()
+        { "accept_value_type", accept_value_type },
+        { "token_eof",
+            (options.external_token ? options.token_name : "Token") + "." + options.token_prefix + capitalize_token("eof")
         },
         { "post_accepted_tokens",[&](std::ostream& os) {
             for (const auto& t : terminal_types) {
                 if (t.second.name == "") {
-                    os << " or " << (options.external_token ? options.token_name : "Token") << "." << t.first;
+                    stencil(os, R"( || token == ${token})",
+                        { "token", (options.external_token ? options.token_name : "Token") + "." + options.token_prefix + t.first }
+                    );
                 }
             }
         } },
@@ -491,9 +499,7 @@ $${entries}
         { "token_name", options.external_token ? options.token_name : "Token" },
         { "value_type_template", options.value_type.empty() ? "<TValue>" : "" },
         { "value_type", options.value_type.empty() ? "TValue" : options.value_type },
-        { "accept_value_type",
-            options.value_type.empty() ? "TValue" : table.get_grammar().begin()->right().begin()->name()
-        }
+        { "accept_value_type", accept_value_type }
     );
 
     // stack operation
@@ -521,7 +527,6 @@ $${pop_stack_implementation}
         }
 
 ${get_arg}
-
         void ClearStack() {
             _stack.Clear();
         }
@@ -539,16 +544,19 @@ ${get_arg}
         { "get_arg" , [&](std::ostream& os) {
             if (options.value_type.empty()) {
                 stencil(os, R"(
-        ${value_type} GetArg(int @base, int index) {
+        TValue GetArg(int @base, int index) {
             return _stack[@base, index].Value;
         }
 )");
-            } else {
+            } else if (options.value_type == accept_value_type) {
                 stencil(os, R"(
         ${value_type} GetArg(int @base, int index) {
             return _stack[@base, index].Value;
         }
-
+)", 
+                    {"value_type", options.value_type });
+            } else {
+                stencil(os, R"(
         T GetArg<T>(int @base, int index) where T : ${value_type} {
             return (T)_stack[@base, index].Value;
         }
@@ -923,12 +931,20 @@ $${debmes:repost_done}
                             { "get_arg", get_arg },
                             { "index", l }
                         );
-                    } else {
+                    } else if (make_type_name(arg.type, options.smart_pointer_tag) != options.value_type) {
                         stencil(
                             os, R"(
             var arg${index} = ${get_arg}<${arg_type}>(@base, arg${index}Index);
 )",
                             { "arg_type", make_type_name(arg.type, options.smart_pointer_tag) },
+                            { "get_arg", get_arg },
+                            { "index", l }
+                        );
+                    } else {
+                        stencil(
+                            os, R"(
+            var arg${index} = ${get_arg}(@base, arg${index}Index);
+)",
                             { "get_arg", get_arg },
                             { "index", l }
                         );
@@ -1034,7 +1050,7 @@ $${debmes:state}
             const auto& rule = action.rule;
 
             // action header
-            std::string case_tag = options.token_prefix + tokens[token];
+            std::string case_tag = options.token_prefix + capitalize_token(tokens[token]);
 
             // action
             switch (action.type) {
@@ -1110,9 +1126,10 @@ $${debmes:state}
 )",
                         { "case_tag", (options.external_token ? options.token_name + "." : "Token.") + capitalize_token(case_tag) },
                         { "accepted_op", 
-                            rule.right().size() == 1
-                            ? "_acceptedValue = GetArg<" + rule.right().begin()->name() + ">(1, 0);"
-                            : "_acceptedValue = GetArg(1, 0);"
+                            rule.right().size() == 1 && !options.value_type.empty()
+                                ? (nonterminal_types.find(rule.right().begin()->name())->second.name != options.value_type
+                                    ?  "_acceptedValue = GetArg<" + rule.right().begin()->name() + ">(1, 0);" : "_acceptedValue = GetArg(1, 0);")
+                                : "_acceptedValue = GetArg(1, 0);"
                         }
                     );
                     break;
