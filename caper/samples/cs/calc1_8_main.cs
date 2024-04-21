@@ -17,13 +17,13 @@ internal class Scanner
 
         var c = (char)n;
         if (-1 == n || 0x0004 == c) {   // 0x0004 for ^D from Console
-            return Token.token_eof;
+            return Token.Eof;
         } else {
             switch (c) {
-            case '+': return Token.token_Add;
-            case '-': return Token.token_Sub;
-            case '*': return Token.token_Mul;
-            case '/': return Token.token_Div;
+            case '+': return Token.Add;
+            case '-': return Token.Sub;
+            case '*': return Token.Mul;
+            case '/': return Token.Div;
             }
         }
 
@@ -37,7 +37,7 @@ internal class Scanner
                 n = _in.Peek();
             }
             node = new Number(v);
-            return Token.token_Number;
+            return Token.Number;
         }
 
         throw new Exception();
@@ -46,17 +46,10 @@ internal class Scanner
     private readonly TextReader _in;
 }
 
-internal class SemanticAction : ISemanticAction<Node>
+internal class SemanticAction : ISemanticAction
 {
     public void StackOverflow() { Console.WriteLine(nameof(StackOverflow)); }
     public void SyntaxError() { Console.WriteLine(nameof(SyntaxError)); }
-
-    public Node FromExpr(Expr value) { return value; }
-    public Node FromNumber(Number value) { return value; }
-    public Node FromTerm(Term value) { return value; }
-    public Expr ToExpr(Node value) { return (Expr)value; }
-    public Number ToNumber(Node value) { return (Number)value; }
-    public Term ToTerm(Node value) { return (Term)value; }
 
     public Expr MakeExpr(Term arg0) { return new TermExpr(arg0); }
     public Expr MakeAdd(Expr arg0, Term arg1) {
@@ -84,7 +77,7 @@ internal class Program
     public static void Main() {
         var s = new Scanner(Console.In);
         var sa = new SemanticAction();
-        var parser = new Parser<Node>(sa);
+        var parser = new Parser(sa);
 
         while (true) {
             var token = s.Get(out var v);

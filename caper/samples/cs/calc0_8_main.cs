@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using calc;
+using Calc;
 
 internal class Scanner
 {
@@ -16,13 +16,13 @@ internal class Scanner
 
         var c = (char)n;
         if (-1 == n || 0x0004 == c) {
-            return Token.token_eof;
+            return Token.Eof;
         } else {
             switch (c) {
-            case '+': return Token.token_Add;
-            case '-': return Token.token_Sub;
-            case '*': return Token.token_Mul;
-            case '/': return Token.token_Div;
+            case '+': return Token.Add;
+            case '-': return Token.Sub;
+            case '*': return Token.Mul;
+            case '/': return Token.Div;
             }
         }
 
@@ -36,7 +36,7 @@ internal class Scanner
                 n = _in.Peek();
             }
             value = v;
-            return Token.token_Number;
+            return Token.Number;
         }
 
         throw new Exception();
@@ -45,13 +45,10 @@ internal class Scanner
     private readonly TextReader _in;
 }
 
-internal class SemanticAction : ISemanticAction<int>
+internal class SemanticAction : ISemanticAction
 {
     public void StackOverflow() { Console.WriteLine(nameof(StackOverflow)); }
     public void SyntaxError() { Console.WriteLine(nameof(SyntaxError)); }
-
-    public int Fromint(int value) { return value; }
-    public int Toint(int value) { return value; }
 
     public int Identity(int arg0) { return arg0; }
 
@@ -67,7 +64,7 @@ internal class Program
     public static void Main() {
         var s = new Scanner(Console.In);
         var sa = new SemanticAction();
-        var parser = new Parser<int>(sa);
+        var parser = new Parser(sa);
 
         while (true) {
             var v = 0;

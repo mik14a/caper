@@ -10,4 +10,14 @@
       <Compile Include="..\..\samples\cs\calc0_8_main.cs" Link="calc0_8_main.cs" />
       <Compile Include="..\..\samples\cs\calc0_8.cs" Link="calc0_8.cs" />
     </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\..\samples\cs\calc0_8.cpg" Link="calc0_8.cpg" />
+    </ItemGroup>
+
+    <Target Name="GenerateSourceTask" BeforeTargets="BeforeBuild">
+        <Message Text="Should run before build" Importance="High" />
+        <Exec Command="..\..\vcproj\Debug\caper.exe -cs8 ..\..\samples\cs\calc0_8.cpg ..\..\samples\cs\calc0_8.cs" />
+    </Target>
+
 </Project>

@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using calc;
+using Calc;
 
 internal class Calculator
 {
@@ -40,13 +40,13 @@ internal class Scanner
 
         var c = (char)n;
         if (-1 == n || 0x0004 == c) {   // 0x0004 for ^D from Console
-            return Token.token_eof;
+            return Token.Eof;
         } else {
             switch (c) {
-            case '+': return Token.token_Add;
-            case '-': return Token.token_Sub;
-            case '*': return Token.token_Mul;
-            case '/': return Token.token_Div;
+            case '+': return Token.Add;
+            case '-': return Token.Sub;
+            case '*': return Token.Mul;
+            case '/': return Token.Div;
             }
         }
 
@@ -60,7 +60,7 @@ internal class Scanner
                 n = _in.Peek();
             }
             node = new Number(v);
-            return Token.token_Number;
+            return Token.Number;
         }
 
         throw new Exception();
