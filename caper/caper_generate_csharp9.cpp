@@ -223,13 +223,15 @@ $${tokens}
     stencil(os, R"(
     interface ISemanticAction${value_type_template}
     {
-        void SyntaxError();
+        void Log(string name, Token token, ${value_type} value);
+        void SyntaxError(string name, Token token, params Token[] tokens);
 $${casts}
 $${methods}
     }
 
 )",
         { "value_type_template", options.value_type.empty() ? "<T>" : ""},
+        { "value_type", options.value_type.empty() ? "T" : options.value_type },
         { "casts", [&](std::ostream& os) {
             if (options.value_type.empty()) {
                 for (auto i = types.begin(); i != types.end(); ++i) {
@@ -1009,7 +1011,7 @@ $${debmes:state}
                     if (options.debug_parser) {
                         stencil(
                             os, R"(
-            System.Console.Error.WriteLine(${d}"[State${state_no}] Token: {token}, Value: {value}");
+            _action.Log(nameof(State${state_no}), token, value);
 )",
                             {"state_no", state.no},
                             {"d", "$"}
@@ -1126,11 +1128,12 @@ $${debmes:state}
                     stencil(
                         os, R"(
             case ${case_tag}:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State${state_no});
                 _error = true;
                 return false;
 )",
-                        {"case_tag", case_tag}
+                        {"case_tag", case_tag},
+                        { "state_no", state.no }
                         );
                     break;
             }
@@ -1182,13 +1185,24 @@ $${debmes:state}
         stencil(
             os, R"(
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State${state_no}), token${actions});
                 _error = true;
                 return false;
             }
         }
 
-)"
+)",
+            { "state_no", state.no },
+            { "actions", [&](std::ostream& os) {
+                for (const auto& pair : state.action_table) {
+                    const auto& token = pair.first;
+                    const auto& action = pair.second;
+                    const auto& rule = action.rule;
+                    // action header
+                    std::string case_tag = options.token_prefix + capitalize_token(tokens[token]);
+                    os << ", " << (options.external_token ? options.token_name + "." : "Token.") + case_tag;
+                }
+            }}
             );
 
         // gotof header
