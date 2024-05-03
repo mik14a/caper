@@ -71,8 +71,13 @@ internal class Scanner
 
 internal class SemanticAction : ISemanticAction<Node>
 {
-    public void StackOverflow() { throw new NotImplementedException(); }
-    public void SyntaxError() { throw new NotImplementedException(); }
+    public void Log(string name, Token token, Node value) {
+        throw new NotImplementedException();
+    }
+
+    public void SyntaxError(string name, Token token, params Token[] tokens) {
+        throw new NotImplementedException();
+    }
 
     public Node FromExpr(Expr value) { return value; }
     public Node Fromint(int value) { return new Number(value); }

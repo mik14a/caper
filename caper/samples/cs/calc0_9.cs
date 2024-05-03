@@ -20,7 +20,8 @@ namespace Calc
 
     interface ISemanticAction
     {
-        void SyntaxError();
+        void Log(string name, Token token, int value);
+        void SyntaxError(string name, Token token, params Token[] tokens);
         int Identity(int arg0);
         int MakeAdd(int arg0, int arg1);
         int MakeDiv(int arg0, int arg1);
@@ -283,7 +284,7 @@ namespace Calc
                 PushStack(/*State*/ 7, value);
                 return false;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State0), token, Token.Number);
                 _error = true;
                 return false;
             }
@@ -313,7 +314,7 @@ namespace Calc
                 PushStack(/*State*/ 5, value);
                 return false;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State1), token, Token.Eof, Token.Add, Token.Sub);
                 _error = true;
                 return false;
             }
@@ -341,7 +342,7 @@ namespace Calc
                 Call0Identity(NonTerminal.Expr, /*Pop*/ 1, 0);
                 return true;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State2), token, Token.Eof, Token.Add, Token.Div, Token.Mul, Token.Sub);
                 _error = true;
                 return false;
             }
@@ -359,7 +360,7 @@ namespace Calc
                 PushStack(/*State*/ 7, value);
                 return false;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State3), token, Token.Number);
                 _error = true;
                 return false;
             }
@@ -389,7 +390,7 @@ namespace Calc
                 Call0MakeAdd(NonTerminal.Expr, /*Pop*/ 3, 0, 2);
                 return true;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State4), token, Token.Eof, Token.Add, Token.Div, Token.Mul, Token.Sub);
                 _error = true;
                 return false;
             }
@@ -407,7 +408,7 @@ namespace Calc
                 PushStack(/*State*/ 7, value);
                 return false;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State5), token, Token.Number);
                 _error = true;
                 return false;
             }
@@ -437,7 +438,7 @@ namespace Calc
                 Call0MakeSub(NonTerminal.Expr, /*Pop*/ 3, 0, 2);
                 return true;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State6), token, Token.Eof, Token.Add, Token.Div, Token.Mul, Token.Sub);
                 _error = true;
                 return false;
             }
@@ -459,7 +460,7 @@ namespace Calc
                 Call0Identity(NonTerminal.Term, /*Pop*/ 1, 0);
                 return true;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State7), token, Token.Eof, Token.Add, Token.Div, Token.Mul, Token.Sub);
                 _error = true;
                 return false;
             }
@@ -477,7 +478,7 @@ namespace Calc
                 PushStack(/*State*/ 9, value);
                 return false;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State8), token, Token.Number);
                 _error = true;
                 return false;
             }
@@ -499,7 +500,7 @@ namespace Calc
                 Call0MakeMul(NonTerminal.Term, /*Pop*/ 3, 0, 2);
                 return true;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State9), token, Token.Eof, Token.Add, Token.Div, Token.Mul, Token.Sub);
                 _error = true;
                 return false;
             }
@@ -517,7 +518,7 @@ namespace Calc
                 PushStack(/*State*/ 11, value);
                 return false;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State10), token, Token.Number);
                 _error = true;
                 return false;
             }
@@ -539,7 +540,7 @@ namespace Calc
                 Call0MakeDiv(NonTerminal.Term, /*Pop*/ 3, 0, 2);
                 return true;
             default:
-                _action.SyntaxError();
+                _action.SyntaxError(nameof(State11), token, Token.Eof, Token.Add, Token.Div, Token.Mul, Token.Sub);
                 _error = true;
                 return false;
             }

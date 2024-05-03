@@ -47,8 +47,12 @@ internal class Scanner
 
 internal class SemanticAction : ISemanticAction
 {
-    public void StackOverflow() { Console.WriteLine(nameof(StackOverflow)); }
-    public void SyntaxError() { Console.WriteLine(nameof(SyntaxError)); }
+    public void Log(string name, Token token, int value) {
+        Console.WriteLine($"[{name}] Token: {token}, Value: {value}");
+    }
+    public void SyntaxError(string name, Token token, params Token[] tokens) {
+        Console.WriteLine($"[{name}] Token: {token}, Value: {string.Join(", ", tokens)}");
+    }
 
     public int Identity(int arg0) { return arg0; }
 
@@ -56,7 +60,6 @@ internal class SemanticAction : ISemanticAction
     public int MakeSub(int arg0, int arg1) { Console.WriteLine($"expr {arg0} - {arg1}"); return arg0 - arg1; }
     public int MakeMul(int arg0, int arg1) { Console.WriteLine($"expr {arg0} * {arg1}"); return arg0 * arg1; }
     public int MakeDiv(int arg0, int arg1) { Console.WriteLine($"expr {arg0} / {arg1}"); return arg0 / arg1; }
-
 }
 
 internal class Program

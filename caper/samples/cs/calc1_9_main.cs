@@ -48,8 +48,12 @@ internal class Scanner
 
 internal class SemanticAction : ISemanticAction
 {
-    public void StackOverflow() { Console.WriteLine(nameof(StackOverflow)); }
-    public void SyntaxError() { Console.WriteLine(nameof(SyntaxError)); }
+    public void Log(string name, Token token, Node value) {
+        Console.WriteLine($"[{name}] Token: {token}, Value: {value}");
+    }
+    public void SyntaxError(string name, Token token, params Token[] tokens) {
+        Console.WriteLine($"[{name}] Token: {token}, Value: {string.Join(", ", tokens)}");
+    }
 
     public Expr MakeExpr(Term arg0) { return new TermExpr(arg0); }
     public Expr MakeAdd(Expr arg0, Term arg1) {
