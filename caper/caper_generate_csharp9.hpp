@@ -3,7 +3,7 @@
 
 #include "caper_ast.hpp"
 
-void generate_csharp8(
+void generate_csharp9(
     const std::string&                  src_filename,
     std::ostream&                       os,
     const GenerateOptions&              options,

@@ -121,7 +121,7 @@ std::string normalize_sa_call(const std::string& s) {
 
 } // unnamed namespace
 
-void generate_csharp8(
+void generate_csharp9(
     const std::string&                  src_filename,
     std::ostream&                       os,
     const GenerateOptions&              options,
@@ -341,8 +341,8 @@ $${methods}
             (this[2], this[1]) = (this[1], this[2]);
         }
 
-        readonly List<T> _stack = new List<T>();
-        readonly List<T> _tmp = new List<T>();
+        readonly List<T> _stack = new();
+        readonly List<T> _tmp = new();
         int _gap = 0;
     }
 
@@ -449,7 +449,7 @@ $${entries}
                 for (const auto& state : table.states()) {
                     stencil(
                         os, R"(
-                new TableEntry(State${i}, Goto${i}, ${handle_error}),
+                new(State${i}, Goto${i}, ${handle_error}),
 )",
                         {"i", i},
                         {"handle_error", state.handle_error}

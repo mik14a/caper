@@ -18,7 +18,7 @@ using std::exit;
 #include "caper_generate_cpp.hpp"
 #include "caper_generate_js.hpp"
 #include "caper_generate_csharp.hpp"
-#include "caper_generate_csharp8.hpp"
+#include "caper_generate_csharp9.hpp"
 #include "caper_generate_d.hpp"
 #include "caper_generate_java.hpp"
 #include "caper_generate_boo.hpp"
@@ -156,7 +156,7 @@ int main(int argc, const char** argv) {
     generators["C++"]           = generate_cpp;
     generators["JavaScript"]    = generate_javascript;
     generators["C#"]            = generate_csharp;
-    generators["C#8"]           = generate_csharp8;
+    generators["C#8"]           = generate_csharp9;
     generators["D"]             = generate_d;
     generators["Java"]          = generate_java;
     generators["Boo"]           = generate_boo;
