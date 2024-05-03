@@ -20,7 +20,7 @@ namespace Calc
 
     interface ISemanticAction
     {
-        void Log(string name, Token token, int value);
+        void DebugLog(string name, Token token, int value);
         void SyntaxError(string name, Token token, params Token[] tokens);
         int Identity(int arg0);
         int MakeAdd(int arg0, int arg1);
@@ -143,8 +143,9 @@ namespace Calc
         public bool Post(Token token, int value) {
             RollbackTmpStack();
             _error = false;
-            while (StackTop().Entry.State(token, value))
-                ; // may throw
+            while (StackTop().Entry.State(token, value)) {
+                // may throw
+            }
             if (!_error) {
                 CommitTmpStack();
             } else {
@@ -233,6 +234,24 @@ namespace Calc
             PushStack(destIndex, default);
         }
 
+        void Call0MakeAdd(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
+            var arg0 = GetArg(@base, arg0Index);
+            var arg1 = GetArg(@base, arg1Index);
+            var r = _action.MakeAdd(arg0, arg1);
+            PopStack(@base);
+            var destIndex = StackTop().Entry.Goto(nonTerminal);
+            PushStack(destIndex, r);
+        }
+
+        void Call0MakeSub(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
+            var arg0 = GetArg(@base, arg0Index);
+            var arg1 = GetArg(@base, arg1Index);
+            var r = _action.MakeSub(arg0, arg1);
+            PopStack(@base);
+            var destIndex = StackTop().Entry.Goto(nonTerminal);
+            PushStack(destIndex, r);
+        }
+
         void Call0Identity(NonTerminal nonTerminal, int @base, int arg0Index) {
             var arg0 = GetArg(@base, arg0Index);
             var r = _action.Identity(arg0);
@@ -259,25 +278,8 @@ namespace Calc
             PushStack(destIndex, r);
         }
 
-        void Call0MakeAdd(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
-            var arg0 = GetArg(@base, arg0Index);
-            var arg1 = GetArg(@base, arg1Index);
-            var r = _action.MakeAdd(arg0, arg1);
-            PopStack(@base);
-            var destIndex = StackTop().Entry.Goto(nonTerminal);
-            PushStack(destIndex, r);
-        }
-
-        void Call0MakeSub(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
-            var arg0 = GetArg(@base, arg0Index);
-            var arg1 = GetArg(@base, arg1Index);
-            var r = _action.MakeSub(arg0, arg1);
-            PopStack(@base);
-            var destIndex = StackTop().Entry.Goto(nonTerminal);
-            PushStack(destIndex, r);
-        }
-
         bool State0(Token token, int value) {
+            _action.DebugLog(nameof(State0), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -292,13 +294,14 @@ namespace Calc
 
         int Goto0(NonTerminal nonTerminal) {
             switch (nonTerminal) {
-            case NonTerminal.Term: return 2;
             case NonTerminal.Expr: return 1;
+            case NonTerminal.Term: return 2;
             default: Debug.Assert(false); return 0;
             }
         }
 
         bool State1(Token token, int value) {
+            _action.DebugLog(nameof(State1), token, value);
             switch (token) {
             case Token.Eof:
                 // Accept
@@ -326,6 +329,7 @@ namespace Calc
         }
 
         bool State2(Token token, int value) {
+            _action.DebugLog(nameof(State2), token, value);
             switch (token) {
             case Token.Div:
                 // Shift
@@ -354,6 +358,7 @@ namespace Calc
         }
 
         bool State3(Token token, int value) {
+            _action.DebugLog(nameof(State3), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -374,6 +379,7 @@ namespace Calc
         }
 
         bool State4(Token token, int value) {
+            _action.DebugLog(nameof(State4), token, value);
             switch (token) {
             case Token.Div:
                 // Shift
@@ -402,6 +408,7 @@ namespace Calc
         }
 
         bool State5(Token token, int value) {
+            _action.DebugLog(nameof(State5), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -422,6 +429,7 @@ namespace Calc
         }
 
         bool State6(Token token, int value) {
+            _action.DebugLog(nameof(State6), token, value);
             switch (token) {
             case Token.Div:
                 // Shift
@@ -450,6 +458,7 @@ namespace Calc
         }
 
         bool State7(Token token, int value) {
+            _action.DebugLog(nameof(State7), token, value);
             switch (token) {
             case Token.Eof:
             case Token.Add:
@@ -472,6 +481,7 @@ namespace Calc
         }
 
         bool State8(Token token, int value) {
+            _action.DebugLog(nameof(State8), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -490,6 +500,7 @@ namespace Calc
         }
 
         bool State9(Token token, int value) {
+            _action.DebugLog(nameof(State9), token, value);
             switch (token) {
             case Token.Eof:
             case Token.Add:
@@ -512,6 +523,7 @@ namespace Calc
         }
 
         bool State10(Token token, int value) {
+            _action.DebugLog(nameof(State10), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -530,6 +542,7 @@ namespace Calc
         }
 
         bool State11(Token token, int value) {
+            _action.DebugLog(nameof(State11), token, value);
             switch (token) {
             case Token.Eof:
             case Token.Add:

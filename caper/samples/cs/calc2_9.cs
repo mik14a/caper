@@ -20,7 +20,7 @@ namespace Calc
 
     interface ISemanticAction<T>
     {
-        void Log(string name, Token token, T value);
+        void DebugLog(string name, Token token, T value);
         void SyntaxError(string name, Token token, params Token[] tokens);
         T FromExpr(Expr value);
         T Fromint(int value);
@@ -150,8 +150,9 @@ namespace Calc
         public bool Post(Token token, TValue value) {
             RollbackTmpStack();
             _error = false;
-            while (StackTop().Entry.State(token, value))
-                ; // may throw
+            while (StackTop().Entry.State(token, value)) {
+                // may throw
+            }
             if (!_error) {
                 CommitTmpStack();
             } else {
@@ -299,6 +300,7 @@ namespace Calc
         }
 
         bool State0(Token token, TValue value) {
+            _action.DebugLog(nameof(State0), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -320,6 +322,7 @@ namespace Calc
         }
 
         bool State1(Token token, TValue value) {
+            _action.DebugLog(nameof(State1), token, value);
             switch (token) {
             case Token.Eof:
                 // Accept
@@ -347,6 +350,7 @@ namespace Calc
         }
 
         bool State2(Token token, TValue value) {
+            _action.DebugLog(nameof(State2), token, value);
             switch (token) {
             case Token.Div:
                 // Shift
@@ -375,6 +379,7 @@ namespace Calc
         }
 
         bool State3(Token token, TValue value) {
+            _action.DebugLog(nameof(State3), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -395,6 +400,7 @@ namespace Calc
         }
 
         bool State4(Token token, TValue value) {
+            _action.DebugLog(nameof(State4), token, value);
             switch (token) {
             case Token.Div:
                 // Shift
@@ -423,6 +429,7 @@ namespace Calc
         }
 
         bool State5(Token token, TValue value) {
+            _action.DebugLog(nameof(State5), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -443,6 +450,7 @@ namespace Calc
         }
 
         bool State6(Token token, TValue value) {
+            _action.DebugLog(nameof(State6), token, value);
             switch (token) {
             case Token.Div:
                 // Shift
@@ -471,6 +479,7 @@ namespace Calc
         }
 
         bool State7(Token token, TValue value) {
+            _action.DebugLog(nameof(State7), token, value);
             switch (token) {
             case Token.Eof:
             case Token.Add:
@@ -493,6 +502,7 @@ namespace Calc
         }
 
         bool State8(Token token, TValue value) {
+            _action.DebugLog(nameof(State8), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -511,6 +521,7 @@ namespace Calc
         }
 
         bool State9(Token token, TValue value) {
+            _action.DebugLog(nameof(State9), token, value);
             switch (token) {
             case Token.Eof:
             case Token.Add:
@@ -533,6 +544,7 @@ namespace Calc
         }
 
         bool State10(Token token, TValue value) {
+            _action.DebugLog(nameof(State10), token, value);
             switch (token) {
             case Token.Number:
                 // Shift
@@ -551,6 +563,7 @@ namespace Calc
         }
 
         bool State11(Token token, TValue value) {
+            _action.DebugLog(nameof(State11), token, value);
             switch (token) {
             case Token.Eof:
             case Token.Add:

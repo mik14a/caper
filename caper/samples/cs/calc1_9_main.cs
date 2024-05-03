@@ -48,7 +48,7 @@ internal class Scanner
 
 internal class SemanticAction : ISemanticAction
 {
-    public void Log(string name, Token token, Node value) {
+    public void DebugLog(string name, Token token, Node value) {
         Console.WriteLine($"[{name}] Token: {token}, Value: {value}");
     }
     public void SyntaxError(string name, Token token, params Token[] tokens) {
