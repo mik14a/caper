@@ -3,21 +3,21 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
-        <LangVersion>8.0</LangVersion>
+        <LangVersion>9.0</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Include="..\..\samples\cs\calc0_8_main.cs" Link="calc0_8_main.cs" />
-      <Compile Include="..\..\samples\cs\calc0_8.cs" Link="calc0_8.cs" />
+      <Compile Include="..\..\samples\cs\calc0_9_main.cs" Link="calc0_9_main.cs" />
+      <Compile Include="..\..\samples\cs\calc0_9.cs" Link="calc0_9.cs" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="..\..\samples\cs\calc0_8.cpg" Link="calc0_8.cpg" />
+      <None Include="..\..\samples\cs\calc0_9.cpg" Link="calc0_9.cpg" />
     </ItemGroup>
 
     <Target Name="GenerateSourceTask" BeforeTargets="BeforeBuild">
         <Message Text="Should run before build" Importance="High" />
-        <Exec Command="..\..\vcproj\Debug\caper.exe -cs8 ..\..\samples\cs\calc0_8.cpg ..\..\samples\cs\calc0_8.cs" />
+        <Exec Command="..\..\vcproj\Debug\caper.exe -cs8 ..\..\samples\cs\calc0_9.cpg ..\..\samples\cs\calc0_9.cs" />
     </Target>
 
 </Project>

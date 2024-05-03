@@ -18,22 +18,15 @@ namespace Calc
         Sub,
     }
 
-    interface ISemanticAction<T>
+    interface ISemanticAction
     {
         void SyntaxError();
-        void StackOverflow();
-        T FromExpr(Expr value);
-        T Fromint(int value);
-        T FromTerm(Term value);
-        Expr ToExpr(T value);
-        int Toint(T value);
-        Term ToTerm(T value);
         Expr MakeAdd(Expr arg0, Term arg1);
-        Term MakeDiv(Term arg0, int arg1);
+        Term MakeDiv(Term arg0, Number arg1);
         Expr MakeExpr(Term arg0);
-        Term MakeMul(Term arg0, int arg1);
+        Term MakeMul(Term arg0, Number arg1);
         Expr MakeSub(Expr arg0, Term arg1);
-        Term MakeTerm(int arg0);
+        Term MakeTerm(Number arg0);
     }
 
     class Stack<T>
@@ -51,9 +44,8 @@ namespace Calc
             _tmp.Clear();
         }
 
-        public bool Push(T value) {
+        public void Push(T value) {
             _tmp.Add(value);
-            return true;
         }
 
         public void Pop(int count) {
@@ -101,12 +93,12 @@ namespace Calc
             (this[2], this[1]) = (this[1], this[2]);
         }
 
-        readonly List<T> _stack = new List<T>();
-        readonly List<T> _tmp = new List<T>();
+        readonly List<T> _stack = new();
+        readonly List<T> _tmp = new();
         int _gap = 0;
     }
 
-    class Parser<TValue>
+    class Parser
     {
         enum NonTerminal
         {
@@ -114,20 +106,20 @@ namespace Calc
             Term,
         }
 
-        public Parser(ISemanticAction<TValue> sa) {
+        public Parser(ISemanticAction sa) {
             _entries = new List<TableEntry> {
-                new TableEntry(State0, Goto0, false),
-                new TableEntry(State1, Goto1, false),
-                new TableEntry(State2, Goto2, false),
-                new TableEntry(State3, Goto3, false),
-                new TableEntry(State4, Goto4, false),
-                new TableEntry(State5, Goto5, false),
-                new TableEntry(State6, Goto6, false),
-                new TableEntry(State7, Goto7, false),
-                new TableEntry(State8, Goto8, false),
-                new TableEntry(State9, Goto9, false),
-                new TableEntry(State10, Goto10, false),
-                new TableEntry(State11, Goto11, false),
+                new(State0, Goto0, false),
+                new(State1, Goto1, false),
+                new(State2, Goto2, false),
+                new(State3, Goto3, false),
+                new(State4, Goto4, false),
+                new(State5, Goto5, false),
+                new(State6, Goto6, false),
+                new(State7, Goto7, false),
+                new(State8, Goto8, false),
+                new(State9, Goto9, false),
+                new(State10, Goto10, false),
+                new(State11, Goto11, false),
             };
             _stack = new Stack<StackFrame>();
             _action = sa;
@@ -139,12 +131,8 @@ namespace Calc
             _accepted = false;
             ClearStack();
             RollbackTmpStack();
-            if (PushStack(0, default)) {
-                CommitTmpStack();
-            } else {
-                _action.StackOverflow();
-                _error = true;
-            }
+            PushStack(0, default);
+            CommitTmpStack();
         }
 
         public bool Post(Token token) {
@@ -152,7 +140,7 @@ namespace Calc
             return Post(token, default);
         }
 
-        public bool Post(Token token, TValue value) {
+        public bool Post(Token token, Node value) {
             RollbackTmpStack();
             _error = false;
             while (StackTop().Entry.State(token, value))
@@ -165,7 +153,7 @@ namespace Calc
             return _accepted || _error;
         }
 
-        public bool Accept(out TValue value) {
+        public bool Accept(out Expr value) {
             Debug.Assert(_accepted);
             value = !_error ? _acceptedValue : default;
             return !_error;
@@ -173,13 +161,13 @@ namespace Calc
 
         public bool Error() { return _error; }
 
-        delegate bool StateType(Token token, TValue value);
+        delegate bool StateType(Token token, Node value);
         delegate int GotoType(NonTerminal nonTerminal);
 
-        readonly ISemanticAction<TValue> _action;
+        readonly ISemanticAction _action;
         bool _accepted;
         bool _error;
-        TValue _acceptedValue;
+        Expr _acceptedValue;
 
         readonly struct TableEntry
         {
@@ -196,9 +184,9 @@ namespace Calc
         readonly struct StackFrame
         {
             public readonly TableEntry Entry;
-            public readonly TValue Value;
+            public readonly Node Value;
             public readonly int SequenceLength;
-            public StackFrame(TableEntry entry, TValue value, int sequenceLength) {
+            public StackFrame(TableEntry entry, Node value, int sequenceLength) {
                 Entry = entry;
                 Value = value;
                 SequenceLength = sequenceLength;
@@ -208,14 +196,8 @@ namespace Calc
         readonly List<TableEntry> _entries;
         readonly Stack<StackFrame> _stack;
 
-        bool PushStack(int stateIndex, TValue value, int sequenceLength = 0) {
-            var f = _stack.Push(new StackFrame(_entries[stateIndex], value, sequenceLength));
-            Debug.Assert(!_error);
-            if (!f) {
-                _error = true;
-                _action.StackOverflow();
-            }
-            return f;
+        void PushStack(int stateIndex, Node value, int sequenceLength = 0) {
+            _stack.Push(new StackFrame(_entries[stateIndex], value, sequenceLength));
         }
 
         void PopStack(int n) {
@@ -226,8 +208,8 @@ namespace Calc
             return _stack.Top();
         }
 
-        TValue GetArg(int @base, int index) {
-            return _stack[@base, index].Value;
+        T GetArg<T>(int @base, int index) where T : Node {
+            return (T)_stack[@base, index].Value;
         }
 
         void ClearStack() {
@@ -242,74 +224,68 @@ namespace Calc
             _stack.CommitTmp();
         }
 
-        void Recover(Token token, TValue value) {
+        void Recover(Token token, Node value) {
         }
 
-        bool CallNothing(NonTerminal nonTerminal, int @base) {
+        void CallNothing(NonTerminal nonTerminal, int @base) {
             PopStack(@base);
             var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, default);
+            PushStack(destIndex, default);
         }
 
-        bool Call0MakeAdd(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
-            var arg0 = _action.ToExpr(GetArg(@base, arg0Index));
-            var arg1 = _action.ToTerm(GetArg(@base, arg1Index));
-            var r = _action.MakeAdd(arg0, arg1);
-            var v = _action.FromExpr(r);
-            PopStack(@base);
-            var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, v);
-        }
-
-        bool Call0MakeSub(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
-            var arg0 = _action.ToExpr(GetArg(@base, arg0Index));
-            var arg1 = _action.ToTerm(GetArg(@base, arg1Index));
-            var r = _action.MakeSub(arg0, arg1);
-            var v = _action.FromExpr(r);
-            PopStack(@base);
-            var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, v);
-        }
-
-        bool Call0MakeExpr(NonTerminal nonTerminal, int @base, int arg0Index) {
-            var arg0 = _action.ToTerm(GetArg(@base, arg0Index));
-            var r = _action.MakeExpr(arg0);
-            var v = _action.FromExpr(r);
-            PopStack(@base);
-            var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, v);
-        }
-
-        bool Call0MakeTerm(NonTerminal nonTerminal, int @base, int arg0Index) {
-            var arg0 = _action.Toint(GetArg(@base, arg0Index));
+        void Call0MakeTerm(NonTerminal nonTerminal, int @base, int arg0Index) {
+            var arg0 = GetArg<Number>(@base, arg0Index);
             var r = _action.MakeTerm(arg0);
-            var v = _action.FromTerm(r);
             PopStack(@base);
             var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, v);
+            PushStack(destIndex, r);
         }
 
-        bool Call0MakeDiv(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
-            var arg0 = _action.ToTerm(GetArg(@base, arg0Index));
-            var arg1 = _action.Toint(GetArg(@base, arg1Index));
+        void Call0MakeDiv(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
+            var arg0 = GetArg<Term>(@base, arg0Index);
+            var arg1 = GetArg<Number>(@base, arg1Index);
             var r = _action.MakeDiv(arg0, arg1);
-            var v = _action.FromTerm(r);
             PopStack(@base);
             var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, v);
+            PushStack(destIndex, r);
         }
 
-        bool Call0MakeMul(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
-            var arg0 = _action.ToTerm(GetArg(@base, arg0Index));
-            var arg1 = _action.Toint(GetArg(@base, arg1Index));
+        void Call0MakeMul(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
+            var arg0 = GetArg<Term>(@base, arg0Index);
+            var arg1 = GetArg<Number>(@base, arg1Index);
             var r = _action.MakeMul(arg0, arg1);
-            var v = _action.FromTerm(r);
             PopStack(@base);
             var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, v);
+            PushStack(destIndex, r);
         }
 
-        bool State0(Token token, TValue value) {
+        void Call0MakeExpr(NonTerminal nonTerminal, int @base, int arg0Index) {
+            var arg0 = GetArg<Term>(@base, arg0Index);
+            var r = _action.MakeExpr(arg0);
+            PopStack(@base);
+            var destIndex = StackTop().Entry.Goto(nonTerminal);
+            PushStack(destIndex, r);
+        }
+
+        void Call0MakeAdd(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
+            var arg0 = GetArg<Expr>(@base, arg0Index);
+            var arg1 = GetArg<Term>(@base, arg1Index);
+            var r = _action.MakeAdd(arg0, arg1);
+            PopStack(@base);
+            var destIndex = StackTop().Entry.Goto(nonTerminal);
+            PushStack(destIndex, r);
+        }
+
+        void Call0MakeSub(NonTerminal nonTerminal, int @base, int arg0Index, int arg1Index) {
+            var arg0 = GetArg<Expr>(@base, arg0Index);
+            var arg1 = GetArg<Term>(@base, arg1Index);
+            var r = _action.MakeSub(arg0, arg1);
+            PopStack(@base);
+            var destIndex = StackTop().Entry.Goto(nonTerminal);
+            PushStack(destIndex, r);
+        }
+
+        bool State0(Token token, Node value) {
             switch (token) {
             case Token.Number:
                 // Shift
@@ -324,18 +300,18 @@ namespace Calc
 
         int Goto0(NonTerminal nonTerminal) {
             switch (nonTerminal) {
-            case NonTerminal.Expr: return 1;
             case NonTerminal.Term: return 2;
+            case NonTerminal.Expr: return 1;
             default: Debug.Assert(false); return 0;
             }
         }
 
-        bool State1(Token token, TValue value) {
+        bool State1(Token token, Node value) {
             switch (token) {
             case Token.Eof:
                 // Accept
                 _accepted = true;
-                _acceptedValue = GetArg(1, 0);
+                _acceptedValue = GetArg<Expr>(1, 0);
                 return false;
             case Token.Add:
                 // Shift
@@ -357,7 +333,7 @@ namespace Calc
             return 0;
         }
 
-        bool State2(Token token, TValue value) {
+        bool State2(Token token, Node value) {
             switch (token) {
             case Token.Div:
                 // Shift
@@ -371,7 +347,8 @@ namespace Calc
             case Token.Add:
             case Token.Sub:
                 // Reduce
-                return Call0MakeExpr(NonTerminal.Expr, /*Pop*/ 1, 0);
+                Call0MakeExpr(NonTerminal.Expr, /*Pop*/ 1, 0);
+                return true;
             default:
                 _action.SyntaxError();
                 _error = true;
@@ -384,7 +361,7 @@ namespace Calc
             return 0;
         }
 
-        bool State3(Token token, TValue value) {
+        bool State3(Token token, Node value) {
             switch (token) {
             case Token.Number:
                 // Shift
@@ -404,7 +381,7 @@ namespace Calc
             }
         }
 
-        bool State4(Token token, TValue value) {
+        bool State4(Token token, Node value) {
             switch (token) {
             case Token.Div:
                 // Shift
@@ -418,7 +395,8 @@ namespace Calc
             case Token.Add:
             case Token.Sub:
                 // Reduce
-                return Call0MakeAdd(NonTerminal.Expr, /*Pop*/ 3, 0, 2);
+                Call0MakeAdd(NonTerminal.Expr, /*Pop*/ 3, 0, 2);
+                return true;
             default:
                 _action.SyntaxError();
                 _error = true;
@@ -431,7 +409,7 @@ namespace Calc
             return 0;
         }
 
-        bool State5(Token token, TValue value) {
+        bool State5(Token token, Node value) {
             switch (token) {
             case Token.Number:
                 // Shift
@@ -451,7 +429,7 @@ namespace Calc
             }
         }
 
-        bool State6(Token token, TValue value) {
+        bool State6(Token token, Node value) {
             switch (token) {
             case Token.Div:
                 // Shift
@@ -465,7 +443,8 @@ namespace Calc
             case Token.Add:
             case Token.Sub:
                 // Reduce
-                return Call0MakeSub(NonTerminal.Expr, /*Pop*/ 3, 0, 2);
+                Call0MakeSub(NonTerminal.Expr, /*Pop*/ 3, 0, 2);
+                return true;
             default:
                 _action.SyntaxError();
                 _error = true;
@@ -478,7 +457,7 @@ namespace Calc
             return 0;
         }
 
-        bool State7(Token token, TValue value) {
+        bool State7(Token token, Node value) {
             switch (token) {
             case Token.Eof:
             case Token.Add:
@@ -486,7 +465,8 @@ namespace Calc
             case Token.Mul:
             case Token.Sub:
                 // Reduce
-                return Call0MakeTerm(NonTerminal.Term, /*Pop*/ 1, 0);
+                Call0MakeTerm(NonTerminal.Term, /*Pop*/ 1, 0);
+                return true;
             default:
                 _action.SyntaxError();
                 _error = true;
@@ -499,7 +479,7 @@ namespace Calc
             return 0;
         }
 
-        bool State8(Token token, TValue value) {
+        bool State8(Token token, Node value) {
             switch (token) {
             case Token.Number:
                 // Shift
@@ -517,7 +497,7 @@ namespace Calc
             return 0;
         }
 
-        bool State9(Token token, TValue value) {
+        bool State9(Token token, Node value) {
             switch (token) {
             case Token.Eof:
             case Token.Add:
@@ -525,7 +505,8 @@ namespace Calc
             case Token.Mul:
             case Token.Sub:
                 // Reduce
-                return Call0MakeMul(NonTerminal.Term, /*Pop*/ 3, 0, 2);
+                Call0MakeMul(NonTerminal.Term, /*Pop*/ 3, 0, 2);
+                return true;
             default:
                 _action.SyntaxError();
                 _error = true;
@@ -538,7 +519,7 @@ namespace Calc
             return 0;
         }
 
-        bool State10(Token token, TValue value) {
+        bool State10(Token token, Node value) {
             switch (token) {
             case Token.Number:
                 // Shift
@@ -556,7 +537,7 @@ namespace Calc
             return 0;
         }
 
-        bool State11(Token token, TValue value) {
+        bool State11(Token token, Node value) {
             switch (token) {
             case Token.Eof:
             case Token.Add:
@@ -564,7 +545,8 @@ namespace Calc
             case Token.Mul:
             case Token.Sub:
                 // Reduce
-                return Call0MakeDiv(NonTerminal.Term, /*Pop*/ 3, 0, 2);
+                Call0MakeDiv(NonTerminal.Term, /*Pop*/ 3, 0, 2);
+                return true;
             default:
                 _action.SyntaxError();
                 _error = true;
