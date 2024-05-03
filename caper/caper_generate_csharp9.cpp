@@ -223,14 +223,23 @@ $${tokens}
     stencil(os, R"(
     interface ISemanticAction${value_type_template}
     {
-        void Log(string name, Token token, ${value_type} value);
-        void SyntaxError(string name, Token token, params Token[] tokens);
+$${debmes:state}
+        void SyntaxError(string name, Token token, ${value_type} value, params Token[] tokens);
 $${casts}
 $${methods}
     }
 
 )",
-        { "value_type_template", options.value_type.empty() ? "<T>" : ""},
+        { "debmes:state", [&](std::ostream& os) {
+            if (options.debug_parser) {
+                stencil(os, R"(
+        void DebugLog(string name, Token token, ${value_type} value);
+)", 
+                    { "value_type", options.value_type.empty() ? "T" : options.value_type }
+                );
+            }
+        }},
+        { "value_type_template", options.value_type.empty() ? "<T>" : "" },
         { "value_type", options.value_type.empty() ? "T" : options.value_type },
         { "casts", [&](std::ostream& os) {
             if (options.value_type.empty()) {
@@ -404,8 +413,9 @@ $${entries}
         public bool Post(${token_name} token, ${value_type} value) {
             RollbackTmpStack();
             _error = false;
-            while (StackTop().Entry.State(token, value))
-                ; // may throw
+            while (StackTop().Entry.State(token, value)) {
+                // may throw
+            }
             if (!_error) {
                 CommitTmpStack();
             } else {
@@ -516,7 +526,8 @@ $${pop_stack_implementation}
             return _stack.Top();
         }
 
-${get_arg}
+$${get_arg}
+
         void ClearStack() {
             _stack.Clear();
         }
@@ -1011,7 +1022,7 @@ $${debmes:state}
                     if (options.debug_parser) {
                         stencil(
                             os, R"(
-            _action.Log(nameof(State${state_no}), token, value);
+            _action.DebugLog(nameof(State${state_no}), token, value);
 )",
                             {"state_no", state.no},
                             {"d", "$"}
@@ -1185,7 +1196,7 @@ $${debmes:state}
         stencil(
             os, R"(
             default:
-                _action.SyntaxError(nameof(State${state_no}), token${actions});
+                _action.SyntaxError(nameof(State${state_no}), token, value${actions});
                 _error = true;
                 return false;
             }

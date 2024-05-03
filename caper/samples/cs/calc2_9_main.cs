@@ -71,7 +71,7 @@ internal class Scanner
 
 internal class SemanticAction : ISemanticAction<Node>
 {
-    public void Log(string name, Token token, Node value) {
+    public void DebugLog(string name, Token token, Node value) {
         throw new NotImplementedException();
     }
 

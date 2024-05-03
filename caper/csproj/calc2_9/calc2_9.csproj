@@ -18,7 +18,7 @@
 
     <Target Name="GenerateSourceTask" BeforeTargets="BeforeBuild">
         <Message Text="Should run before build" Importance="High" />
-        <Exec Command="..\..\vcproj\Debug\caper.exe -cs8 ..\..\samples\cs\calc2_9.cpg ..\..\samples\cs\calc2_9.cs" />
+        <Exec Command="..\..\vcproj\Debug\caper.exe --debug -cs8 ..\..\samples\cs\calc2_9.cpg ..\..\samples\cs\calc2_9.cs" />
     </Target>
 
 </Project>
