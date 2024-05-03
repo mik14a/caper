@@ -224,7 +224,6 @@ $${tokens}
     interface ISemanticAction${value_type_template}
     {
         void SyntaxError();
-        void StackOverflow();
 $${casts}
 $${methods}
     }
@@ -291,9 +290,8 @@ $${methods}
             _tmp.Clear();
         }
 
-        public bool Push(T value) {
+        public void Push(T value) {
             _tmp.Add(value);
-            return true;
         }
 
         public void Pop(int count) {
@@ -392,12 +390,8 @@ $${entries}
             _accepted = false;
             ClearStack();
             RollbackTmpStack();
-            if (PushStack(0, default)) {
-                CommitTmpStack();
-            } else {
-                _action.StackOverflow();
-                _error = true;
-            }
+            PushStack(0, default);
+            CommitTmpStack();
         }
 
         public bool Post(${token_name} token) {
@@ -508,14 +502,8 @@ $${entries}
         readonly List<TableEntry> _entries;
         readonly Stack<StackFrame> _stack;
 
-        bool PushStack(int stateIndex, ${value_type} value, int sequenceLength = 0) {
-            var f = _stack.Push(new StackFrame(_entries[stateIndex], value, sequenceLength));
-            Debug.Assert(!_error);
-            if (!f) {
-                _error = true;
-                _action.StackOverflow();
-            }
-            return f;
+        void PushStack(int stateIndex, ${value_type} value, int sequenceLength = 0) {
+            _stack.Push(new StackFrame(_entries[stateIndex], value, sequenceLength));
         }
 
         void PopStack(int n) {
@@ -846,10 +834,10 @@ $${debmes:repost_done}
 
     stencil(
         os, R"(
-        bool CallNothing(NonTerminal nonTerminal, int @base) {
+        void CallNothing(NonTerminal nonTerminal, int @base) {
             PopStack(@base);
             var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, default);
+            PushStack(destIndex, default);
         }
 
 )"
@@ -898,7 +886,7 @@ $${debmes:repost_done}
             // header
             stencil(
                 os, R"(
-        bool Call${stub_index}${sa_name}(NonTerminal nonTerminal, int @base${args}) {
+        void Call${stub_index}${sa_name}(NonTerminal nonTerminal, int @base${args}) {
 )",
                 {"stub_index", stub_index},
                 {"sa_name", normalize_internal_sa_name(sa.name)},
@@ -967,7 +955,7 @@ $${debmes:repost_done}
             var v = _action.From${nonterminal_type}(r);
             PopStack(@base);
             var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, v);
+            PushStack(destIndex, v);
         }
 
 )",
@@ -987,7 +975,7 @@ $${debmes:repost_done}
             var r = _action.${semantic_action_name}(${args});
             PopStack(@base);
             var destIndex = StackTop().Entry.Goto(nonTerminal);
-            return PushStack(destIndex, r);
+            PushStack(destIndex, r);
         }
 
 )",
@@ -1106,7 +1094,8 @@ $${debmes:state}
                         stencil(
                             os, R"(
                 // Reduce
-                return ${funcname}(NonTerminal.${nonterminal}, /*Pop*/ ${base});
+                ${funcname}(NonTerminal.${nonterminal}, /*Pop*/ ${base});
+                return true;
 )",
                             {"funcname", funcname},
                             {"nonterminal", rule.left().name()},
@@ -1174,7 +1163,8 @@ $${debmes:state}
             stencil(
                 os, R"(
                 // Reduce
-                return Call${index}${sa_name}(NonTerminal.${nonterminal}, /*Pop*/ ${base}${args});
+                Call${index}${sa_name}(NonTerminal.${nonterminal}, /*Pop*/ ${base}${args});
+                return true;
 )",
                 {"index", index},
                 {"sa_name", normalize_internal_sa_name(signature[0])},
