@@ -13,10 +13,11 @@ caper/vcproj/Debug
 caper/vcproj/Release
 caper/vcproj/*.sdf
 caper/vcproj/*.suo
-tmp/*.zip
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
+out/
+build/
 Debug/
 Release/
 Win32/
